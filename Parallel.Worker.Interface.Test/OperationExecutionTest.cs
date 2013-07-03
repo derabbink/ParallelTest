@@ -12,9 +12,6 @@ namespace Parallel.Worker.Interface.Test
     {
         private Func<object, object> _operationFunc;
         private object _operationArg;
-        private Guid _operationId;
-        private EventHandler<OperationStartedEventArgs> _operationStartedEventHandler;
-        private EventHandler<OperationCompletedEventArgs> _operationCompletedEventHandler;
 
         #region Setup
 
@@ -23,9 +20,6 @@ namespace Parallel.Worker.Interface.Test
         {
             CreateOperationFunc();
             CreateOperationArg();
-            CreateOperationId();
-            CreateOperationStartedListener();
-            CreateOperationCompletedListener();
         }
 
         private void CreateOperationFunc()
@@ -38,21 +32,6 @@ namespace Parallel.Worker.Interface.Test
             _operationArg = null;
         }
 
-        private void CreateOperationId()
-        {
-            _operationId = new Guid();
-        }
-
-        private void CreateOperationStartedListener()
-        {
-            _operationStartedEventHandler = (sender, args) => { };
-        }
-
-        private void CreateOperationCompletedListener()
-        {
-            _operationCompletedEventHandler = (sender, args) => { };
-        }
-
         #endregion
 
         #region Test Cases
@@ -60,10 +39,10 @@ namespace Parallel.Worker.Interface.Test
         [Test]
         public void ExecuteNormal()
         {
-            Operation op = Operation.CreateWithListeners(_operationFunc, _operationArg, _operationId,
-                                                         _operationStartedEventHandler, _operationCompletedEventHandler);
+            Operation op = new Operation(_operationFunc, _operationArg);
             op.Execute();
-            Assert.Pass();
+            var result = op.Execute();
+            Assert.That(result.State, Is.EqualTo(OperationResultState.Success));
         }
 
         [Test]
@@ -75,10 +54,27 @@ namespace Parallel.Worker.Interface.Test
                     ThrowException(unexpectedError);
                     return null;
                 };
-            Operation op = Operation.CreateWithListeners(operationFunc, _operationArg, _operationId,
-                                                         _operationStartedEventHandler, _operationCompletedEventHandler);
-            op.Execute();
-            Assert.Pass();
+            Operation op = new Operation(operationFunc, _operationArg);
+            var result = op.Execute();
+            Assert.That(result.State, Is.EqualTo(OperationResultState.Error));
+        }
+
+
+
+        [Test]
+        [ExpectedException(typeof(Exception), ExpectedMessage = "Expected Error")]
+        public void ExecutionExceptionIsCorrect()
+        {
+            var expectedError = "Expected Error";
+            Func<object, object> operationFunc = _ =>
+            {
+                ThrowException(expectedError);
+                return null;
+            };
+            Operation op = new Operation(operationFunc, _operationArg);
+            var result = op.Execute();
+            Assert.That(result.State, Is.EqualTo(OperationResultState.Error));
+            throw result.Exception;
         }
 
         #endregion
@@ -90,9 +86,6 @@ namespace Parallel.Worker.Interface.Test
         {
             DestroyOperationFunc();
             DestroyOperationArg();
-            DestroyOperationId();
-            DestroyOperationStartedListener();
-            DestroyOperationCompletedListener();
         }
 
         private void DestroyOperationFunc()
@@ -103,21 +96,6 @@ namespace Parallel.Worker.Interface.Test
         private void DestroyOperationArg()
         {
             _operationArg = null;
-        }
-
-        private void DestroyOperationId()
-        {
-            //nothing to do here
-        }
-
-        private void DestroyOperationStartedListener()
-        {
-            _operationStartedEventHandler = null;
-        }
-
-        private void DestroyOperationCompletedListener()
-        {
-            _operationCompletedEventHandler = null;
         }
 
         #endregion

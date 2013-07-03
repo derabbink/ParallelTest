@@ -29,7 +29,7 @@ namespace Parallel.Worker.Interface
         {
             Guid id = new Guid();
 
-            Operation op = Operation.CreateWithListeners(operation, arg, id, CreateStartedListener(), CreateCompletedListener());
+            Operation op = new Operation(operation, arg);
             _executor.Execute(op);
 
             return id;

@@ -12,10 +12,7 @@ namespace Parallel.Worker.Interface.Test
     {
         private Func<object, object> _operationFunc;
         private object _operationArg;
-        private Guid _operationId;
-        private EventHandler<OperationStartedEventArgs> _operationStartedEventHandler;
-        private EventHandler<OperationCompletedEventArgs> _operationCompletedEventHandler;
-
+        
         #region Setup
 
         [SetUp]
@@ -23,9 +20,6 @@ namespace Parallel.Worker.Interface.Test
         {
             CreateOperationFunc();
             CreateOperationArg();
-            CreateOperationId();
-            CreateOperationStartedListener();
-            CreateOperationCompletedListener();
         }
 
         private void CreateOperationFunc()
@@ -38,63 +32,22 @@ namespace Parallel.Worker.Interface.Test
             _operationArg = null;
         }
 
-        private void CreateOperationId()
-        {
-            _operationId = new Guid();
-        }
-
-        private void CreateOperationStartedListener()
-        {
-            _operationStartedEventHandler = (sender, args) => { };
-        }
-
-        private void CreateOperationCompletedListener()
-        {
-            _operationCompletedEventHandler = (sender, args) => { };
-        }
-
         #endregion
 
         #region Test Cases
 
         [Test]
-        [ExpectedException(typeof(Exception), ExpectedMessage = "StartedListener")]
-        public void CreateWithListenersAddsStartedListener()
+        public void ValidInternalInstruction()
         {
-            string expectedError = "StartedListener";
-            EventHandler<OperationStartedEventArgs> startedHandler = (sender, args) => ThrowException(expectedError);
-            Operation op = Operation.CreateWithListeners(_operationFunc, _operationArg, _operationId,
-                                                         startedHandler, _operationCompletedEventHandler);
-            op.Execute();
-        }
-
-        [Test]
-        [ExpectedException(typeof(Exception), ExpectedMessage = "CompletedListener")]
-        public void CreateWithListenersAddsCompletedListener()
-        {
-            string expectedError = "CompletedListener";
-            EventHandler<OperationCompletedEventArgs> completedHandler = (sender, args) => ThrowException(expectedError);
-            Operation op = Operation.CreateWithListeners(_operationFunc, _operationArg, _operationId,
-                                                         _operationStartedEventHandler, completedHandler);
-            op.Execute();
-        }
-
-        [Test]
-        public void CreationWithoutStartedListenerWorks()
-        {
-            Operation op = Operation.CreateWithListeners(_operationFunc, _operationArg, _operationId,
-                                                         null, _operationCompletedEventHandler);
-            op.Execute();
+            Operation op = new Operation(_operationFunc, _operationArg);
             Assert.Pass();
         }
 
         [Test]
-        public void CreationWithoutCompletedListenerWorks()
+        [ExpectedException(typeof(ArgumentNullException), ExpectedMessage = "Precondition failed: operation != null  operation must not be null\r\nParameter name: operation must not be null")]
+        public void InvalidInternalInstruction()
         {
-            Operation op = Operation.CreateWithListeners(_operationFunc, _operationArg, _operationId,
-                                                         _operationStartedEventHandler, null);
-            op.Execute();
-            Assert.Pass();
+            Operation op = new Operation(null, _operationArg);
         }
 
         #endregion
@@ -106,9 +59,6 @@ namespace Parallel.Worker.Interface.Test
         {
             DestroyOperationFunc();
             DestroyOperationArg();
-            DestroyOperationId();
-            DestroyOperationStartedListener();
-            DestroyOperationCompletedListener();
         }
 
         private void DestroyOperationFunc()
@@ -119,21 +69,6 @@ namespace Parallel.Worker.Interface.Test
         private void DestroyOperationArg()
         {
             _operationArg = null;
-        }
-
-        private void DestroyOperationId()
-        {
-            //nothing to do here
-        }
-
-        private void DestroyOperationStartedListener()
-        {
-            _operationStartedEventHandler = null;
-        }
-
-        private void DestroyOperationCompletedListener()
-        {
-            _operationCompletedEventHandler = null;
         }
 
         #endregion
