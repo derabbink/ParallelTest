@@ -44,6 +44,7 @@
     <Compile Include="Operation.cs" />
     <Compile Include="Parallel\Executor.cs" />
     <Compile Include="Parallel\ThreadExecutor.cs" />
+    <Compile Include="Util\OperationWrapper.cs" />
     <Compile Include="Worker.cs" />
     <Compile Include="Events\OperationCompletedEventArgs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

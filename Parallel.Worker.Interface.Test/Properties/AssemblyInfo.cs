@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Parallel.Worker.Interface")]
+[assembly: AssemblyTitle("Parallel.Worker.Interface.Test")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Fugro")]
-[assembly: AssemblyProduct("Parallel.Worker.Interface")]
+[assembly: AssemblyProduct("Parallel.Worker.Interface.Test")]
 [assembly: AssemblyCopyright("Copyright © Fugro 2013")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("b7a77d99-1b46-4bed-a5e7-f5c8802a388a")]
+[assembly: Guid("162b23a1-6df8-4027-ad7e-37a01380e521")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -31,9 +31,5 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
-// [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
-
-// visibility for testing
-[assembly: InternalsVisibleTo("Parallel.Worker.Interface.Test")]
