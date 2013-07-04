@@ -33,8 +33,8 @@ namespace Parallel.Worker.Interface.Test
         public void ExecuteProducesCorrectMessages()
         {
             Action op = CreateOperation();
-            var obsActual = _worker.Execute(op);
-            var actual = obsActual.ToEnumerable().GetEnumerator();
+            var actualObs = _worker.Execute(op);
+            var actual = actualObs.ToEnumerable().GetEnumerator();
             var expected = CreateOperationUpdates();
             
             foreach (var opExpected in expected)
@@ -43,6 +43,28 @@ namespace Parallel.Worker.Interface.Test
                 var opActual = actual.Current;
                 Assert.That(opActual.GetType(), Is.EqualTo(opExpected.GetType()));
             }
+            Assert.That(actual.MoveNext(), Is.False);
+        }
+
+        [Test]
+        [ExpectedException(typeof(Exception), ExpectedMessage = "ExpectedError")]
+        public void ExecuteFailingProducesCorrectError()
+        {
+            var expectedError = "ExpectedError";
+            Action op = CreateFailingOperation(expectedError);
+            var actualObs = _worker.Execute(op);
+            var actual = actualObs.ToEnumerable().GetEnumerator();
+            var expected = CreateFailingOperationUpdates();
+
+            foreach (var opExpected in expected)
+            {
+                actual.MoveNext();
+                var opActual = actual.Current;
+                Assert.That(opActual.GetType(), Is.EqualTo(opExpected.GetType()));
+            }
+            //exception comes after all messages have been checked
+            //exception will inhibit assertion execution
+            Assert.That(actual.MoveNext(), Is.False);
         }
 
         private Action CreateOperation()
@@ -58,6 +80,24 @@ namespace Parallel.Worker.Interface.Test
                 {
                     new OperationStarted(operationId),
                     new OperationCompletedSuccess(operationResult, operationId)
+                }.AsEnumerable();
+        }
+
+        private Action CreateFailingOperation(string message)
+        {
+            return () =>
+                {
+                    throw new Exception(message);
+                };
+        }
+
+        private IEnumerable<OperationProgress> CreateFailingOperationUpdates()
+        {
+            object operationResult = null;
+            Guid operationId = new Guid();
+            return new OperationProgress[]
+                {
+                    new OperationStarted(operationId)
                 }.AsEnumerable();
         }
     }

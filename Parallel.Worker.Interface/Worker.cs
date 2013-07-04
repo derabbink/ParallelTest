@@ -12,7 +12,7 @@ using Parallel.Worker.Interface.Rx;
 namespace Parallel.Worker.Interface
 {
     /// <summary>
-    /// Executes an operation, and wraps the execution in an observable sequence
+    /// Executes operations, and wraps them in observable sequences
     /// </summary>
     public class Worker
     {
