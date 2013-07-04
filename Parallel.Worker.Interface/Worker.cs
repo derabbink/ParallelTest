@@ -47,7 +47,9 @@ namespace Parallel.Worker.Interface
         {
             Guid id = new Guid();
             var result = new ReplaySubject<OperationProgress>();
-            _obsStarted.ForOperation(id).Merge(_obsCompleted.ForOperation(id)).Subscribe(result);
+            _obsStarted.ForOperation(id).Take(1)
+                .Merge(_obsCompleted.ForOperation(id).Take(1))
+                .Subscribe(result);
 
             Operation op = new Operation(operation, arg);
             _executor.Execute(op, id);

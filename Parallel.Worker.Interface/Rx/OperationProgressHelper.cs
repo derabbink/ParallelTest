@@ -21,8 +21,8 @@ namespace Parallel.Worker.Interface.Rx
         }
 
         /// <summary>
-        /// Combines first OperationStarted and first OperationCompleted into uniformly typed sequenece
-        /// that completes with successful operation and produces an error on failed operation.
+        /// Combines OperationStarted and OperationCompleted into a uniformly typed sequenece
+        /// that will produces an error for a failed operation.
         /// Blindly passes on operationId
         /// </summary>
         /// <param name="started"></param>
@@ -31,8 +31,8 @@ namespace Parallel.Worker.Interface.Rx
         internal static IObservable<OperationProgress> Merge(this IObservable<OperationStarted> started,
                                                              IObservable<OperationCompleted> completed)
         {
-            return started.TranslateStarted().Take(1)
-                          .Concat(completed.TranslateOperationResult().Take(1));
+            return started.TranslateStarted()
+                          .Concat(completed.TranslateOperationResult());
         }
 
         /// <summary>
