@@ -8,14 +8,14 @@ namespace Parallel.Worker.Interface.Rx
     /// <summary>
     /// Rx message for operations completed with error
     /// </summary>
-    internal class OperationCompletedError : OperationCompletedSuccess
+    internal class OperationCompletedError : OperationProgress
     {
         /// <summary>
         /// throws <paramref name="exception"/>
         /// </summary>
         /// <param name="exception"></param>
         /// <param name="operationId"></param>
-        internal OperationCompletedError(Exception exception, Guid operationId) : base(null, operationId)
+        internal OperationCompletedError(Exception exception, Guid operationId) : base(operationId)
         {
             throw exception;
         }

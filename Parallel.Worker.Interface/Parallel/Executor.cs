@@ -8,6 +8,9 @@ using Parallel.Worker.Interface.Util;
 
 namespace Parallel.Worker.Interface.Parallel
 {
+    /// <summary>
+    /// 
+    /// </summary>
     internal abstract class Executor
     {
         internal event EventHandler<OperationStartedEventArgs> OperationStarted;
@@ -15,6 +18,12 @@ namespace Parallel.Worker.Interface.Parallel
 
         internal abstract void Execute(Operation operation, Guid id);
 
+        /// <summary>
+        /// takes care of raising events around the operation execution.
+        /// should be called by the implementer of <see cref="Execute"/>
+        /// </summary>
+        /// <param name="operation"></param>
+        /// <param name="id"></param>
         protected void ExecuteWithEvents(Operation operation, Guid id)
         {
             RaiseStartedEvent(id);

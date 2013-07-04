@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -15,7 +16,7 @@ namespace Parallel.Worker.Interface.Rx
         /// <param name="source"></param>
         /// <param name="id">operationId to filter on</param>
         /// <returns></returns>
-        internal static IObservable<OperationProgress> ForOperation(this IObservable<OperationProgress> source, Guid id)
+        internal static IObservable<TOperationProgress> ForOperation<TOperationProgress>(this IObservable<TOperationProgress> source, Guid id) where TOperationProgress : OperationProgress
         {
             return source.Where(op => op.OperationId == id);
         }
@@ -28,8 +29,8 @@ namespace Parallel.Worker.Interface.Rx
         /// <param name="started"></param>
         /// <param name="completed"></param>
         /// <returns></returns>
-        internal static IObservable<OperationProgress> Merge(this IObservable<OperationStarted> started,
-                                                             IObservable<OperationCompleted> completed)
+        internal static IObservable<OperationProgress> MergeOperation(this IObservable<OperationStarted> started,
+                                                                      IObservable<OperationCompleted> completed)
         {
             return started.TranslateStarted()
                           .Concat(completed.TranslateOperationResult());
@@ -52,10 +53,10 @@ namespace Parallel.Worker.Interface.Rx
         /// </summary>
         /// <param name="completed"></param>
         /// <returns></returns>
-        private static IObservable<OperationCompletedSuccess> TranslateOperationResult(this IObservable<OperationCompleted> completed)
+        private static IObservable<OperationProgress> TranslateOperationResult(
+            this IObservable<OperationCompleted> completed)
         {
-
-            return completed.TranslateOperationError().Amb(completed.TranslateOperationSuccess());
+            return completed.TranslateOperationError().Merge(completed.TranslateOperationSuccess());
         }
 
         /// <summary>
@@ -65,12 +66,14 @@ namespace Parallel.Worker.Interface.Rx
         /// </summary>
         /// <param name="completed"></param>
         /// <returns>observable sequence that will produce an error</returns>
-        private static IObservable<OperationCompletedSuccess> TranslateOperationError(
+        private static IObservable<OperationProgress> TranslateOperationError(
             this IObservable<OperationCompleted> completed)
         {
             return
                 completed.Where(or => or.Result.State == OperationResultState.Error)
-                         .Select(or => new OperationCompletedError(or.Result.Exception, or.OperationId));
+                         .Select(
+                             or =>
+                             new OperationCompletedError(or.Result.Exception, or.OperationId) as OperationProgress);
         }
 
         /// <summary>
@@ -79,12 +82,13 @@ namespace Parallel.Worker.Interface.Rx
         /// </summary>
         /// <param name="completed"></param>
         /// <returns></returns>
-        private static IObservable<OperationCompletedSuccess> TranslateOperationSuccess(
+        private static IObservable<OperationProgress> TranslateOperationSuccess(
             this IObservable<OperationCompleted> completed)
         {
             return
                 completed.Where(or => or.Result.State == OperationResultState.Success)
-                         .Select(or => new OperationCompletedSuccess(or.Result.Value, or.OperationId));
+                         .Select(
+                             or => new OperationCompletedSuccess(or.Result.Value, or.OperationId) as OperationProgress);
         }
     }
 }

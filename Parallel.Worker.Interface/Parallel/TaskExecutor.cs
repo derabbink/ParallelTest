@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Parallel.Worker.Interface.Parallel
@@ -10,8 +11,7 @@ namespace Parallel.Worker.Interface.Parallel
     {
         internal override void Execute(Operation operation, Guid id)
         {
-            Task task = new Task(() => ExecuteWithEvents(operation, id));
-            task.Start();
+            Task task = Task.Factory.StartNew(() => ExecuteWithEvents(operation, id));
         }
     }
 }

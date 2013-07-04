@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -13,11 +14,11 @@ namespace Parallel.Worker.Interface
     /// <summary>
     /// Executes an operation, and wraps the execution in an observable sequence
     /// </summary>
-    public abstract class Worker
+    public class Worker
     {
         private Executor _executor;
-        private IObservable<OperationProgress> _obsStarted;
-        private IObservable<OperationProgress> _obsCompleted;
+        private IObservable<OperationStarted> _obsStarted;
+        private IObservable<OperationCompleted> _obsCompleted;
 
         public Worker()
         {
@@ -25,16 +26,25 @@ namespace Parallel.Worker.Interface
             CreateObservables();
         }
 
+        /// <summary>
+        /// wraps notification events in observables to closely resemble
+        /// wcf callback architecture (which we'll explore later)
+        /// </summary>
         private void CreateObservables()
         {
-            _obsStarted =
+            var started =
                 Observable.FromEventPattern<OperationStartedEventArgs>(handler => _executor.OperationStarted += handler,
                                                                        handler => _executor.OperationStarted -= handler)
-                          .Select(ep => new OperationStarted(ep.EventArgs.OperationId));
-            _obsCompleted =
+                          .Select(ep => new OperationStarted(ep.EventArgs.OperationId)).Publish();
+            started.Connect();
+            _obsStarted = started;
+
+            var completed =
                 Observable.FromEventPattern<OperationCompletedEventArgs>(handler => _executor.OperationCompleted += handler,
                                                                          handler => _executor.OperationCompleted -= handler)
-                          .Select(ep => new OperationCompleted(ep.EventArgs.Result, ep.EventArgs.OperationId));
+                          .Select(ep => new OperationCompleted(ep.EventArgs.Result, ep.EventArgs.OperationId)).Publish();
+            completed.Connect();
+            _obsCompleted = completed;
         }
 
         /// <summary>
@@ -47,8 +57,9 @@ namespace Parallel.Worker.Interface
         {
             Guid id = new Guid();
             var result = _obsStarted.ForOperation(id).Take(1)
-                .Merge(_obsCompleted.ForOperation(id).Take(1))
+                .MergeOperation(_obsCompleted.ForOperation(id).Take(1))
                 .Replay();
+            result.Connect();
 
             Operation op = new Operation(operation, arg);
             _executor.Execute(op, id);
