@@ -46,10 +46,9 @@ namespace Parallel.Worker.Interface
         public IObservable<OperationProgress> Execute(Func<object, object> operation, object arg)
         {
             Guid id = new Guid();
-            var result = new ReplaySubject<OperationProgress>();
-            _obsStarted.ForOperation(id).Take(1)
+            var result = _obsStarted.ForOperation(id).Take(1)
                 .Merge(_obsCompleted.ForOperation(id).Take(1))
-                .Subscribe(result);
+                .Replay();
 
             Operation op = new Operation(operation, arg);
             _executor.Execute(op, id);
