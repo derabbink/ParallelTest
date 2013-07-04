@@ -9,6 +9,9 @@ using Parallel.Worker.Interface.Util;
 
 namespace Parallel.Worker.Interface
 {
+    /// <summary>
+    /// Wraps a Func's execution and contains potential errors
+    /// </summary>
     internal class Operation
     {
         private readonly Func<object, object> _operation;

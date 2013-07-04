@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Parallel.Worker.Interface
 {
-    internal class OperationResult
+    public class OperationResult
     {
         private OperationResult(OperationResultState state, object value, Exception exception)
         {
@@ -24,10 +24,10 @@ namespace Parallel.Worker.Interface
             return new OperationResult(OperationResultState.Error, null, error);
         }
 
-        internal OperationResultState State { get; private set; }
+        public OperationResultState State { get; private set; }
 
-        internal object Value { get; private set; }
+        public object Value { get; private set; }
 
-        internal Exception Exception { get; private set; }
+        public Exception Exception { get; private set; }
     }
 }

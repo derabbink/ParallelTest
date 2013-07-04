@@ -5,13 +5,13 @@ using System.Text;
 
 namespace Parallel.Worker.Interface.Events
 {
-    public class OperationStartedEventArgs : EventArgs
+    internal class OperationStartedEventArgs : EventArgs
     {
-        public OperationStartedEventArgs(Guid operationId)
+        internal OperationStartedEventArgs(Guid operationId)
         {
             OperationId = operationId;
         }
 
-        public Guid OperationId { get; private set; }
+        internal Guid OperationId { get; private set; }
     }
 }

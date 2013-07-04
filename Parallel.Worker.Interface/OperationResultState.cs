@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Parallel.Worker.Interface
 {
-    internal enum OperationResultState
+    public enum OperationResultState
     {
         Success,
         Error
