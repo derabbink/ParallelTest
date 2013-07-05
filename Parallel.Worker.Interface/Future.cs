@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -9,10 +10,11 @@ using Parallel.Worker.Interface.Instruction;
 
 namespace Parallel.Worker.Interface
 {
-    public class Future<TResult> where TResult : class
+    /// <summary>
+    /// Future that does not contain a computation result
+    /// </summary>
+    public class Future
     {
-        private readonly AutoResetEvent _completedWaitHandle;
-
         public enum FutureState
         {
             PreExecution,
@@ -20,9 +22,11 @@ namespace Parallel.Worker.Interface
             Completed
         }
 
+        private readonly ManualResetEvent _completedWaitHandle;
+
         public Future()
         {
-            _completedWaitHandle = new AutoResetEvent(false);
+            _completedWaitHandle = new ManualResetEvent(false);
             State = FutureState.PreExecution;
         }
 
@@ -34,37 +38,18 @@ namespace Parallel.Worker.Interface
             private set;
         }
 
-        private SafeInstructionResult<TResult> _result;
-
-        public SafeInstructionResult<TResult> Result
-        {
-            [MethodImpl(MethodImplOptions.Synchronized)]
-            get
-            {
-                Contract.Requires<InvalidOperationException>(State == FutureState.Completed, string.Format("State was not {0}, but {1}.", FutureState.Completed, State));
-                return _result;
-            }
-            [MethodImpl(MethodImplOptions.Synchronized)]
-            private set
-            {
-                Contract.Requires<InvalidOperationException>(State == FutureState.Completed, string.Format("State was not {0}, but {1}.", FutureState.Completed, State));
-                _result = value;
-            }
-        }
-
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void SetExecuting()
         {
-            Contract.Requires<InvalidOperationException>(State == FutureState.Completed, string.Format("State was not {0}, but {1}.", FutureState.PreExecution, State));
+            Contract.Requires<InvalidOperationException>(State == FutureState.PreExecution, "State was not 'PreExecution'");
             State = FutureState.Executing;
         }
 
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void SetCompleted(SafeInstructionResult<TResult> result)
+        public void SetCompleted()
         {
-            Contract.Requires<InvalidOperationException>(State == FutureState.Executing, string.Format("State was not {0}, but {1}.", FutureState.Executing, State));
+            Contract.Requires<InvalidOperationException>(State == FutureState.Executing, "State was not 'Executing'");
             State = FutureState.Completed;
-            Result = result;
             _completedWaitHandle.Set();
         }
 
@@ -83,6 +68,37 @@ namespace Parallel.Worker.Interface
         {
             if (State == FutureState.Executing)
                 throw new NotImplementedException();
+        }
+    }
+
+    /// <summary>
+    /// Future that contains a computation result
+    /// </summary>
+    /// <typeparam name="TResult"></typeparam>
+    public class Future<TResult> : Future where TResult : class
+    {
+        private SafeInstructionResult<TResult> _result;
+
+        public SafeInstructionResult<TResult> Result
+        {
+            [MethodImpl(MethodImplOptions.Synchronized)]
+            get
+            {
+                Contract.Requires<InvalidOperationException>(State == FutureState.Completed, "State was not 'Completed'");
+                return _result;
+            }
+            [MethodImpl(MethodImplOptions.Synchronized)]
+            private set
+            {
+                _result = value;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public void SetCompleted(SafeInstructionResult<TResult> result)
+        {
+            Result = result;
+            base.SetCompleted();
         }
     }
 }
