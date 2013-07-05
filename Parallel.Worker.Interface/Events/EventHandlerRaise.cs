@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Parallel.Worker.Interface.Util
+namespace Parallel.Worker.Interface.Events
 {
-    internal static class EventHelper
+    internal static class EventHandlerRaise
     {
         public static void Raise(this EventHandler eh, object sender, EventArgs e)
         {

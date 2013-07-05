@@ -3,20 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Parallel.Worker.Interface.Util
+namespace Parallel.Worker.Interface.Instruction
 {
-    /// <summary>
-    /// Helper class for translating different types of Finc and Action
-    /// into <code>Func<object, object></code>
-    /// </summary>
-    internal static class OperationWrapper
+    internal static class Wrapper
     {
         /// <summary>
         /// Wraps an operation in a lambda that matches the Worker.Execute argument
         /// </summary>
         /// <param name="operation">operation that takes no arguments</param>
         /// <returns>operation that takes a bogus argument. supplied argument will discarded</returns>
-        internal static Func<object, object> Wrap(Func<object> operation)
+        internal static Func<object, TResult> Wrap<TResult>(Func<TResult> operation) where TResult : class
         {
             return _ => operation();
         }
@@ -26,7 +22,7 @@ namespace Parallel.Worker.Interface.Util
         /// </summary>
         /// <param name="operation">operation without return value</param>
         /// <returns>operation that returns null</returns>
-        internal static Func<object, object> Wrap(Action<object> operation)
+        internal static Func<TArgument, object> Wrap<TArgument>(Action<TArgument> operation) where TArgument : class
         {
             return arg =>
             {
