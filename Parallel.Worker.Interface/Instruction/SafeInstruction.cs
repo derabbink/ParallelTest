@@ -15,7 +15,7 @@ namespace Parallel.Worker.Interface.Instruction
         private readonly Func<TArgument, TResult> _instruction;
         private readonly TArgument _argument;
 
-        internal SafeInstruction(Func<TArgument, TResult> instruction, TArgument argument)
+        public SafeInstruction(Func<TArgument, TResult> instruction, TArgument argument)
         {
             Contract.Requires<ArgumentNullException>(instruction != null, "operation must not be null");
 

@@ -5,14 +5,14 @@ using System.Text;
 
 namespace Parallel.Worker.Interface.Instruction
 {
-    internal static class Wrapper
+    public static class Wrapper
     {
         /// <summary>
         /// Wraps an operation in a lambda that matches the Worker.Execute argument
         /// </summary>
         /// <param name="operation">operation that takes no arguments</param>
         /// <returns>operation that takes a bogus argument. supplied argument will discarded</returns>
-        internal static Func<object, TResult> Wrap<TResult>(Func<TResult> operation) where TResult : class
+        public static Func<object, TResult> Wrap<TResult>(Func<TResult> operation) where TResult : class
         {
             return _ => operation();
         }
@@ -22,7 +22,7 @@ namespace Parallel.Worker.Interface.Instruction
         /// </summary>
         /// <param name="operation">operation without return value</param>
         /// <returns>operation that returns null</returns>
-        internal static Func<TArgument, object> Wrap<TArgument>(Action<TArgument> operation) where TArgument : class
+        public static Func<TArgument, object> Wrap<TArgument>(Action<TArgument> operation) where TArgument : class
         {
             return arg =>
             {
@@ -36,7 +36,7 @@ namespace Parallel.Worker.Interface.Instruction
         /// </summary>
         /// <param name="operation">operation without argument or return value</param>
         /// <returns>operation that takes bogus argument and returns null. supplied argument will be discarded</returns>
-        internal static Func<object, object> Wrap(Action operation)
+        public static Func<object, object> Wrap(Action operation)
         {
             return _ =>
             {
