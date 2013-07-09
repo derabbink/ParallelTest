@@ -45,4 +45,20 @@ namespace Parallel.Worker.Interface
             future.SetCompleted(result);
         }
     }
+
+    public class Executor<TArgument, TResult> : Executor
+        where TArgument : class
+        where TResult : class
+    {
+        public Future<TResult> Execute(Func<TArgument, TResult> instruction, TArgument argument)
+        {
+            return Execute<TArgument, TResult>(instruction, argument);
+        }
+
+        protected virtual void CompleteFuture(Future<TResult> future,
+                                              SafeInstruction<TArgument, TResult> safeInstruction)
+        {
+            CompleteFuture<TArgument, TResult>(future, safeInstruction);
+        }
+    }
 }
