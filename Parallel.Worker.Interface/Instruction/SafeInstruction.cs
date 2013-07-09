@@ -10,7 +10,9 @@ namespace Parallel.Worker.Interface.Instruction
     /// Represents an instruction/a delegate and wraps it's execution
     /// to contain any potential exceptions
     /// </summary>
-    public class SafeInstruction<TArgument, TResult> where TArgument : class where TResult : class
+    public class SafeInstruction<TArgument, TResult>
+        where TArgument : class
+        where TResult : class
     {
         private readonly Func<TArgument, TResult> _instruction;
         private readonly TArgument _argument;

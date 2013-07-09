@@ -75,7 +75,8 @@ namespace Parallel.Worker.Interface
     /// Future that contains a computation result
     /// </summary>
     /// <typeparam name="TResult"></typeparam>
-    public class Future<TResult> : Future where TResult : class
+    public class Future<TResult> : Future
+        where TResult : class
     {
         private SafeInstructionResult<TResult> _result;
 
