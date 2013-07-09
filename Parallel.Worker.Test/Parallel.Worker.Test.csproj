@@ -55,6 +55,7 @@
     <Compile Include="Communication\SingleChannelCallback\ChannelTest.cs" />
     <Compile Include="Instruction\CallbackInstructionTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SingleChannelCallbackExecutorTest.cs" />
     <Compile Include="TaskExecutorTest.cs" />
   </ItemGroup>
   <ItemGroup>
