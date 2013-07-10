@@ -10,6 +10,8 @@ namespace Parallel.Worker.Interface.Test.Instruction
     [TestFixture]
     public class WrapperTest
     {
+        #region tests
+
         [Test]
         public void WrapNoArgs()
         {
@@ -43,5 +45,7 @@ namespace Parallel.Worker.Interface.Test.Instruction
             wrapped(arg);
             Assert.That(actual, Is.SameAs(expected));
         }
+
+        #endregion
     }
 }

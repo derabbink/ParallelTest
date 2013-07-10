@@ -63,6 +63,7 @@
     </CodeAnalysisDependentAssemblyPaths>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GenericExecutorTest.cs" />
     <Compile Include="ExecutorTest.cs" />
     <Compile Include="FutureStateTest.cs" />
     <Compile Include="FutureWaitTest.cs" />

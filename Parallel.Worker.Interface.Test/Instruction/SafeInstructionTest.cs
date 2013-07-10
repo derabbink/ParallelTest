@@ -10,6 +10,8 @@ namespace Parallel.Worker.Interface.Test.Instruction
     [TestFixture]
     public class SafeInstructionTest
     {
+        #region tests
+
         [Test]
         public void ValidConstruction()
         {
@@ -43,5 +45,7 @@ namespace Parallel.Worker.Interface.Test.Instruction
             Assert.That(result.State, Is.EqualTo(SafeInstructionResult.ResultState.Failed));
             Assert.That(result.Exception, Is.SameAs(expectedException));
         }
+
+        #endregion
     }
 }

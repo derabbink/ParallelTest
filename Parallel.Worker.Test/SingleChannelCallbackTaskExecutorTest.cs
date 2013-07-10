@@ -4,15 +4,19 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using NUnit.Framework;
+using Parallel.Worker.Communication.SingleChannelCallback;
 using Parallel.Worker.Interface;
 using Parallel.Worker.Interface.Instruction;
 
 namespace Parallel.Worker.Test
 {
     [TestFixture]
-    public class TaskExecutorTest
+    public class SingleChannelCallbackTaskExecutorTest
     {
-        private Executor _executor;
+        private Channel<object, object> _successChannel;
+        private Channel<Exception, object> _failureChannel;
+        private Executor<object, object> _successExecutor;
+        private Executor<Exception, object> _failureExecutor;
         private Func<object, object> _identity;
         private object _argumentSuccessful;
         private Func<Exception, object> _throw;
@@ -25,7 +29,10 @@ namespace Parallel.Worker.Test
         [SetUp]
         public void Setup()
         {
-            _executor = new TaskExecutor();
+            _successChannel = new Channel<object, object>();
+            _failureChannel = new Channel<Exception, object>();
+            _successExecutor = new SingleChannelCallbackTaskExecutor<object, object>(_successChannel, _successChannel);
+            _failureExecutor = new SingleChannelCallbackTaskExecutor<Exception, object>(_failureChannel, _failureChannel);
             _identity = a => a;
             _instructionBlockingResetEvent = new ManualResetEvent(false);
             _identityBlocking = a =>
@@ -45,7 +52,7 @@ namespace Parallel.Worker.Test
         [Test]
         public void ExecuteProducesIncompleteFuture()
         {
-            var future = _executor.Execute(_identityBlocking, _argumentSuccessful);
+            var future = _successExecutor.Execute(_identityBlocking, _argumentSuccessful);
             Assert.That(future.State, Is.EqualTo(Future.FutureState.PreExecution).Or.EqualTo(Future.FutureState.Executing));
             //cleanup
             _instructionBlockingResetEvent.Set();
@@ -54,7 +61,7 @@ namespace Parallel.Worker.Test
         [Test]
         public void ExecuteProducesIncompleteFutureThatCompletesEventually()
         {
-            var future = _executor.Execute(_identityBlocking, _argumentSuccessful);
+            var future = _successExecutor.Execute(_identityBlocking, _argumentSuccessful);
             Assert.That(future.State, Is.EqualTo(Future.FutureState.PreExecution).Or.EqualTo(Future.FutureState.Executing));
             _instructionBlockingResetEvent.Set();
             future.Wait();
@@ -65,7 +72,7 @@ namespace Parallel.Worker.Test
         public void ExecuteSuccessful()
         {
             var expected = _argumentSuccessful;
-            var future = _executor.Execute(_identity, _argumentSuccessful);
+            var future = _successExecutor.Execute(_identity, _argumentSuccessful);
             future.Wait();
             Assert.That(future.State, Is.EqualTo(Future.FutureState.Completed));
             Assert.That(future.Result.State, Is.EqualTo(SafeInstructionResult.ResultState.Succeeded));
@@ -76,7 +83,7 @@ namespace Parallel.Worker.Test
         public void ExecuteFailure()
         {
             var expected = _argumentFailure;
-            var future = _executor.Execute(_throw, _argumentFailure);
+            var future = _failureExecutor.Execute(_throw, _argumentFailure);
             future.Wait();
             Assert.That(future.State, Is.EqualTo(Future.FutureState.Completed));
             Assert.That(future.Result.State, Is.EqualTo(SafeInstructionResult.ResultState.Failed));

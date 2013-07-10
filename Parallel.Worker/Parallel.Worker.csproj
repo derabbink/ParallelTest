@@ -62,6 +62,7 @@
     <Compile Include="Events\SingleChannelCallback\CallbackEventArgs.cs" />
     <Compile Include="Instruction\CallbackInstruction.cs" />
     <Compile Include="SingleChannelCallbackExecutor.cs" />
+    <Compile Include="SingleChannelCallbackTaskExecutor.cs" />
     <Compile Include="TaskExecutor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -15,7 +15,9 @@ namespace Parallel.Worker.Interface.Test
         private object _argumentSuccessful;
         private Func<Exception, object> _throw;
         private Exception _argumentFailure;
-        
+
+        #region setup
+
         [SetUp]
         public void Setup()
         {
@@ -25,6 +27,10 @@ namespace Parallel.Worker.Interface.Test
             _throw = e => { throw e; };
             _argumentFailure = new Exception("Expected");
         }
+
+        #endregion
+
+        #region tests
 
         [Test]
         public void ExecuteProducesCompleteFuture()
@@ -55,5 +61,7 @@ namespace Parallel.Worker.Interface.Test
             Assert.That(future.Result.State, Is.EqualTo(SafeInstructionResult.ResultState.Failed));
             Assert.That(future.Result.Exception, Is.SameAs(expected));
         }
+
+        #endregion
     }
 }

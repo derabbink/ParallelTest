@@ -21,12 +21,39 @@ namespace Parallel.Worker
         protected override void CompleteFuture<TArgument, TResult>(Future<TResult> future,
                                                                    SafeInstruction<TArgument, TResult> safeInstruction)
         {
+            CompleteFutureGeneric(future, safeInstruction);
+        }
+
+        /// <summary>
+        /// Used by both the generic and non-generic class
+        /// </summary>
+        /// <typeparam name="TArgument"></typeparam>
+        /// <typeparam name="TResult"></typeparam>
+        /// <param name="future"></param>
+        /// <param name="safeInstruction"></param>
+        internal static void CompleteFutureGeneric<TArgument, TResult>(Future<TResult> future,
+                                                                SafeInstruction<TArgument, TResult> safeInstruction)
+            where TArgument : class
+            where TResult : class
+        {
             Task.Factory.StartNew(() =>
-                {
-                    future.SetExecuting();
-                    var result = safeInstruction.Invoke();
-                    future.SetCompleted(result);
-                });
+            {
+                future.SetExecuting();
+                var result = safeInstruction.Invoke();
+                future.SetCompleted(result);
+            });
+        }
+    }
+
+    public class TaskExecutor<TArgument, TResult> : Executor<TArgument, TResult>
+        where TArgument : class
+        where TResult : class
+    {
+
+        protected override void CompleteFuture(Future<TResult> future,
+                                               SafeInstruction<TArgument, TResult> safeInstruction)
+        {
+            TaskExecutor.CompleteFutureGeneric(future, safeInstruction);
         }
     }
 }

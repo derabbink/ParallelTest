@@ -9,6 +9,8 @@ namespace Parallel.Worker.Interface.Test
     [TestFixture]
     public class FutureStateTest
     {
+        #region tests
+
         [Test]
         public void InitialStateCorrect()
         {
@@ -40,5 +42,7 @@ namespace Parallel.Worker.Interface.Test
             Future future = new Future();
             future.SetCompleted();
         }
+
+        #endregion
     }
 }

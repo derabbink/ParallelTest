@@ -11,10 +11,10 @@ namespace Parallel.Worker.Interface.Test
     [TestFixture]
     public class FutureWaitTest
     {
-        #region Setup
-
         private Future _future;
-        Action _wait;
+        private Action _wait;
+
+        #region setup
 
         [SetUp]
         public void Setup()

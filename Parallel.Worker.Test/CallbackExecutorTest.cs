@@ -20,6 +20,8 @@ namespace Parallel.Worker.Test
         private ManualResetEvent _instructionBlockingResetEvent;
         private Exception _argumentFailure;
 
+        #region setup
+
         [SetUp]
         public void Setup()
         {
@@ -35,6 +37,10 @@ namespace Parallel.Worker.Test
             _throw = (e, _) => { throw e; };
             _argumentFailure = new Exception("Expected");
         }
+
+        #endregion
+
+        #region tests
 
         [Test]
         public void ExecuteProducesIncompleteFuture()
@@ -76,5 +82,7 @@ namespace Parallel.Worker.Test
             Assert.That(future.Result.State, Is.EqualTo(SafeInstructionResult.ResultState.Failed));
             Assert.That(future.Result.Exception, Is.SameAs(expected));
         }
+
+        #endregion
     }
 }

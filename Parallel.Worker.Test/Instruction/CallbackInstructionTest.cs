@@ -12,6 +12,8 @@ namespace Parallel.Worker.Test.Instruction
     {
         private Action<object, Action<object>> _identity;
 
+        #region tests
+
         [SetUp]
         public void Setup()
         {
@@ -26,5 +28,7 @@ namespace Parallel.Worker.Test.Instruction
             object actual = wrapped(expected);
             Assert.That(actual, Is.SameAs(expected));
         }
+
+        #endregion
     }
 }
