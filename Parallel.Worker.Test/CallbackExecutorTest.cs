@@ -12,7 +12,7 @@ namespace Parallel.Worker.Test
     [TestFixture]
     public class CallbackExecutorTest
     {
-        private Executor _executor;
+        private IExecutor _executor;
         private Action<object, Action<object>> _identity;
         private object _argumentSuccessful;
         private Action<Exception, Action<object>> _throw;

@@ -12,8 +12,8 @@ namespace Parallel.Worker.Test
     [TestFixture]
     public class GenericTaskExecutorTest
     {
-        private Executor<object, object> _successExecutor;
-        private Executor<Exception, object> _failureExecutor;
+        private IExecutor<object, object> _successExecutor;
+        private IExecutor<Exception, object> _failureExecutor;
         private Func<object, object> _identity;
         private object _argumentSuccessful;
         private Func<Exception, object> _throw;

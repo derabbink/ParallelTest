@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using Parallel.Worker.Events;
 using Parallel.Worker.Events.SingleChannelCallback;
-using Parallel.Worker.Instruction;
 using Parallel.Worker.Interface.Instruction;
 
 namespace Parallel.Worker.Communication.SingleChannelCallback

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using Parallel.Worker.Interface.Instruction;
 
-namespace Parallel.Worker.Instruction
+namespace Parallel.Worker.Interface.Instruction
 {
     /// <summary>
     /// Wraps a callback pattern like it is a normal call-return method

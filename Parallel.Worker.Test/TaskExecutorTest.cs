@@ -12,7 +12,7 @@ namespace Parallel.Worker.Test
     [TestFixture]
     public class TaskExecutorTest
     {
-        private Executor _executor;
+        private IExecutor _executor;
         private Func<object, object> _identity;
         private object _argumentSuccessful;
         private Func<Exception, object> _throw;

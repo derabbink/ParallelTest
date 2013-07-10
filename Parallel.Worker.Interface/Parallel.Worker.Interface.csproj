@@ -89,9 +89,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CallbackExecutor.cs" />
     <Compile Include="Events\EventHandlerRaise.cs" />
-    <Compile Include="Executor.cs" />
     <Compile Include="Future.cs" />
+    <Compile Include="IExecutor.cs" />
+    <Compile Include="Instruction\CallbackInstruction.cs" />
     <Compile Include="Instruction\SafeInstruction.cs" />
     <Compile Include="Instruction\SafeInstructionResult.cs" />
     <Compile Include="Instruction\Wrapper.cs" />

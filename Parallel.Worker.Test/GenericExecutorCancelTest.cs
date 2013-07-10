@@ -5,13 +5,15 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
+using Parallel.Worker.Interface;
 
-namespace Parallel.Worker.Interface.Test
+namespace Parallel.Worker.Test
 {
     [TestFixture]
-    public class ExecutorCancelTest
+    public class GenericExecutorCancelTest
     {
-        private Executor _executor;
+        private Executor<object, object> _executorSuccessful;
+        private Executor<Exception, object> _executorFailure;
         private Func<object, object> _identity;
         private Func<Exception, object> _throw;
         private object _argumentSuccessful;
@@ -22,7 +24,8 @@ namespace Parallel.Worker.Interface.Test
         [SetUp]
         public void Setup()
         {
-            _executor = new Executor();
+            _executorSuccessful = new Executor<object, object>();
+            _executorFailure = new Executor<Exception, object>();
             _identity = a => a;
             _throw = e => { throw e; };
             _argumentSuccessful = new object();
@@ -37,7 +40,7 @@ namespace Parallel.Worker.Interface.Test
         [Test]
         public void SequentialCancellationSuccessful()
         {
-            Future<object> future = _executor.Execute(_identity, _argumentSuccessful);
+            Future<object> future = _executorSuccessful.Execute(_identity, _argumentSuccessful);
             //future.Wait() not required
             future.Cancel();
             Assert.That(future.State, Is.EqualTo(Future.FutureState.Completed));
@@ -46,7 +49,7 @@ namespace Parallel.Worker.Interface.Test
         [Test]
         public void SequentialCancellationFailure()
         {
-            Future<object> future = _executor.Execute(_throw, _argumentFailure);
+            Future<object> future = _executorFailure.Execute(_throw, _argumentFailure);
             //future.Wait() not required
             future.Cancel();
             Assert.That(future.State, Is.EqualTo(Future.FutureState.Completed));

@@ -11,7 +11,7 @@ namespace Parallel.Worker.Test
     [TestFixture]
     public class TaskExecutorCancelTest
     {
-        private Executor _executor;
+        private IExecutor _executor;
         private Func<object, object> _identity;
         private Func<object, object> _identityBlocking;
         private Func<Exception, object> _throw;

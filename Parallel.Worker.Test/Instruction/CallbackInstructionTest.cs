@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using NUnit.Framework;
-using Parallel.Worker.Instruction;
+using Parallel.Worker.Interface.Instruction;
 
 namespace Parallel.Worker.Test.Instruction
 {

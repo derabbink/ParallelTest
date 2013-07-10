@@ -54,13 +54,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CallbackExecutor.cs" />
     <Compile Include="Communication\SingleChannelCallback\Channel.cs" />
     <Compile Include="Communication\SingleChannelCallback\IClient.cs" />
     <Compile Include="Communication\SingleChannelCallback\IServer.cs" />
     <Compile Include="Events\EventHandlerRaise.cs" />
     <Compile Include="Events\SingleChannelCallback\CallbackEventArgs.cs" />
-    <Compile Include="Instruction\CallbackInstruction.cs" />
+    <Compile Include="Executor.cs" />
     <Compile Include="SingleChannelCallbackExecutor.cs" />
     <Compile Include="SingleChannelCallbackTaskExecutor.cs" />
     <Compile Include="TaskExecutor.cs" />

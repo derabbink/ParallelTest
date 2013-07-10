@@ -9,9 +9,37 @@ using Parallel.Worker.Interface.Instruction;
 
 namespace Parallel.Worker
 {
-    public class SingleChannelCallbackExecutor<TArgument, TResult> : Executor<TArgument, TResult>
+    /// <summary>
+    /// Executes instructions who's result is returend through raising a (shared) callback event.
+    /// callback event listeners pick up the incoming result and complete the associated future.
+    /// Executes instructions sequentially.
+    /// </summary>
+    /// <typeparam name="TArgument"></typeparam>
+    /// <typeparam name="TResult"></typeparam>
+    public class SingleChannelCallbackExecutor<TArgument, TResult> : SingleChannelCallbackExecutor<TArgument, TResult, object>
         where TArgument : class
         where TResult : class
+    {
+        public SingleChannelCallbackExecutor(IClient<TResult> client, IServer<TArgument, TResult> server) : base(client, server)
+        {
+            _client = client;
+            _server = server;
+        }
+    }
+
+    /// <summary>
+    /// Executes instructions who's result is returend through raising a (shared) callback event.
+    /// callback event listeners pick up the incoming result and complete the associated future.
+    /// Executes instructions sequentially.
+    /// </summary>
+    /// <typeparam name="TArgument"></typeparam>
+    /// <typeparam name="TResult"></typeparam>
+    /// <typeparam name="TFutureCompanion"></typeparam>
+    [Obsolete("Only used by Executor implementers", false)]
+    public class SingleChannelCallbackExecutor<TArgument, TResult, TFutureCompanion> : Executor<TArgument, TResult, TFutureCompanion>
+        where TArgument : class
+        where TResult : class
+        where TFutureCompanion : class
     {
         protected IClient<TResult> _client;
         protected IServer<TArgument, TResult> _server;
@@ -23,14 +51,15 @@ namespace Parallel.Worker
         }
 
         protected override void CompleteFuture(Future<TResult> future,
-                                              SafeInstruction<TArgument, TResult> safeInstruction)
+                                               TFutureCompanion companion,
+                                               SafeInstruction<TArgument, TResult> safeInstruction)
         {
-            Guid operationId = SetupCallbackListeners(future);
+            Guid operationId = SetupCallbackListeners(future, companion);
             future.SetExecuting();
             _server.Run(operationId, safeInstruction, _client);
         }
 
-        protected virtual Guid SetupCallbackListeners(Future<TResult> future)
+        protected virtual Guid SetupCallbackListeners(Future<TResult> future, TFutureCompanion companion)
         {
             Guid operationId = new Guid();
             EventHandler<CallbackEventArgs<TResult>> callbackListener = null;

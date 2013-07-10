@@ -2,23 +2,35 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Parallel.Worker.Interface;
 using Parallel.Worker.Interface.Instruction;
 
 namespace Parallel.Worker
 {
-    public class TaskExecutor : Executor
+    public class TaskExecutor : Executor<CancellationTokenSource>
     {
-        protected override Future<TResult> CreateFuture<TResult>()
+        protected override CancellationTokenSource CreateFutureCompanion()
         {
-            return CreateFutureGeneric<TResult>();
+            return CreateFutureCompanionGeneric();
         }
 
-        internal static Future<TResult> CreateFutureGeneric<TResult>()
+        internal static CancellationTokenSource CreateFutureCompanionGeneric()
+        {
+            return new CancellationTokenSource();
+        }
+
+        protected override Future<TResult> CreateFuture<TResult>(CancellationTokenSource companion)
+        {
+            return CreateFutureGeneric<TResult>(companion);
+        }
+
+        internal static Future<TResult> CreateFutureGeneric<TResult>(CancellationTokenSource companion)
             where TResult : class
         {
-            return new Future<TResult>();
+            Action cancel = companion.Cancel;
+            return new Future<TResult>(cancel);
         }
 
         /// <summary>
@@ -28,11 +40,13 @@ namespace Parallel.Worker
         /// <typeparam name="TArgument"></typeparam>
         /// <typeparam name="TResult"></typeparam>
         /// <param name="future"></param>
+        /// <param name="companion"></param>
         /// <param name="safeInstruction"></param>
         protected override void CompleteFuture<TArgument, TResult>(Future<TResult> future,
+                                                                   CancellationTokenSource companion,
                                                                    SafeInstruction<TArgument, TResult> safeInstruction)
         {
-            CompleteFutureGeneric(future, safeInstruction, base.CompleteFuture);
+            CompleteFutureGeneric(future, companion, safeInstruction, base.CompleteFuture);
         }
 
         /// <summary>
@@ -41,30 +55,38 @@ namespace Parallel.Worker
         /// <typeparam name="TArgument"></typeparam>
         /// <typeparam name="TResult"></typeparam>
         /// <param name="future"></param>
+        /// <param name="companion"></param>
         /// <param name="safeInstruction"></param>
         internal static void CompleteFutureGeneric<TArgument, TResult>(Future<TResult> future,
+                                                                       CancellationTokenSource companion,
                                                                        SafeInstruction<TArgument, TResult> safeInstruction,
-                                                                       Action<Future<TResult>, SafeInstruction<TArgument, TResult>> completeFuture)
+                                                                       Action<Future<TResult>, CancellationTokenSource, SafeInstruction<TArgument, TResult>> completeFuture)
             where TArgument : class
             where TResult : class
         {
-            Task.Factory.StartNew(() => completeFuture(future, safeInstruction));
+            Task.Factory.StartNew(() => completeFuture(future, companion, safeInstruction), companion.Token);
         }
     }
 
-    public class TaskExecutor<TArgument, TResult> : Executor<TArgument, TResult>
+    public class TaskExecutor<TArgument, TResult> : Executor<TArgument, TResult, CancellationTokenSource>
         where TArgument : class
         where TResult : class
     {
-        protected override Future<TResult> CreateFuture()
+        protected override CancellationTokenSource CreateFutureCompanion()
         {
-            return TaskExecutor.CreateFutureGeneric<TResult>();
+            return TaskExecutor.CreateFutureCompanionGeneric();
+        }
+
+        protected override Future<TResult> CreateFuture(CancellationTokenSource companion)
+        {
+            return TaskExecutor.CreateFutureGeneric<TResult>(companion);
         }
 
         protected override void CompleteFuture(Future<TResult> future,
+                                               CancellationTokenSource companion,
                                                SafeInstruction<TArgument, TResult> safeInstruction)
         {
-            TaskExecutor.CompleteFutureGeneric(future, safeInstruction, base.CompleteFuture);
+            TaskExecutor.CompleteFutureGeneric(future, companion, safeInstruction, base.CompleteFuture);
         }
     }
 }

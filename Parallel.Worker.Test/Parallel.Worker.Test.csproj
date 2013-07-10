@@ -53,6 +53,10 @@
   <ItemGroup>
     <Compile Include="CallbackExecutorTest.cs" />
     <Compile Include="Communication\SingleChannelCallback\ChannelTest.cs" />
+    <Compile Include="ExecutorCancelTest.cs" />
+    <Compile Include="ExecutorTest.cs" />
+    <Compile Include="GenericExecutorCancelTest.cs" />
+    <Compile Include="GenericExecutorTest.cs" />
     <Compile Include="GenericTaskExecutorCancelTest.cs" />
     <Compile Include="GenericTaskExecutorTest.cs" />
     <Compile Include="Instruction\CallbackInstructionTest.cs" />

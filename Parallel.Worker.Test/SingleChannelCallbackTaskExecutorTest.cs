@@ -15,8 +15,8 @@ namespace Parallel.Worker.Test
     {
         private Channel<object, object> _successChannel;
         private Channel<Exception, object> _failureChannel;
-        private Executor<object, object> _successExecutor;
-        private Executor<Exception, object> _failureExecutor;
+        private IExecutor<object, object> _successExecutor;
+        private IExecutor<Exception, object> _failureExecutor;
         private Func<object, object> _identity;
         private object _argumentSuccessful;
         private Func<Exception, object> _throw;
