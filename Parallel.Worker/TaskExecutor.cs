@@ -21,7 +21,7 @@ namespace Parallel.Worker
         protected override void CompleteFuture<TArgument, TResult>(Future<TResult> future,
                                                                    SafeInstruction<TArgument, TResult> safeInstruction)
         {
-            CompleteFutureGeneric(future, safeInstruction);
+            CompleteFutureGeneric(future, safeInstruction, base.CompleteFuture);
         }
 
         /// <summary>
@@ -32,16 +32,12 @@ namespace Parallel.Worker
         /// <param name="future"></param>
         /// <param name="safeInstruction"></param>
         internal static void CompleteFutureGeneric<TArgument, TResult>(Future<TResult> future,
-                                                                SafeInstruction<TArgument, TResult> safeInstruction)
+                                                                       SafeInstruction<TArgument, TResult> safeInstruction,
+                                                                       Action<Future<TResult>, SafeInstruction<TArgument, TResult>> completeFuture)
             where TArgument : class
             where TResult : class
         {
-            Task.Factory.StartNew(() =>
-            {
-                future.SetExecuting();
-                var result = safeInstruction.Invoke();
-                future.SetCompleted(result);
-            });
+            Task.Factory.StartNew(() => completeFuture(future, safeInstruction));
         }
     }
 
@@ -53,7 +49,7 @@ namespace Parallel.Worker
         protected override void CompleteFuture(Future<TResult> future,
                                                SafeInstruction<TArgument, TResult> safeInstruction)
         {
-            TaskExecutor.CompleteFutureGeneric(future, safeInstruction);
+            TaskExecutor.CompleteFutureGeneric(future, safeInstruction, base.CompleteFuture);
         }
     }
 }
