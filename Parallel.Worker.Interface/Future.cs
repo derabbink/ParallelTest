@@ -24,11 +24,18 @@ namespace Parallel.Worker.Interface
         }
 
         private readonly ManualResetEvent _completedWaitHandle;
+        private readonly Action _cancellationHandler;
 
         public Future()
         {
+            _cancellationHandler = null;
             _completedWaitHandle = new ManualResetEvent(false);
             State = FutureState.PreExecution;
+        }
+
+        public Future(Action cancellationHandler) : this()
+        {
+            _cancellationHandler = cancellationHandler;
         }
 
         public FutureState State
@@ -54,11 +61,6 @@ namespace Parallel.Worker.Interface
             _completedWaitHandle.Set();
         }
 
-        protected void SetCancelled()
-        {
-            State = FutureState.Cancelled;
-        }
-
         /// <summary>
         /// Blocks until <see cref="State"/> is Completed
         /// </summary>
@@ -76,7 +78,9 @@ namespace Parallel.Worker.Interface
         {
             if (State == FutureState.PreExecution || State == FutureState.Executing)
             {
-                SetCancelled();
+                if (_cancellationHandler != null)
+                    _cancellationHandler();
+                State = FutureState.Cancelled;
             }
         }
     }
@@ -89,6 +93,14 @@ namespace Parallel.Worker.Interface
         where TResult : class
     {
         private SafeInstructionResult<TResult> _result;
+
+        public Future() : base()
+        {
+        }
+
+        public Future(Action cancellationHandler) : base(cancellationHandler)
+        {
+        }
 
         public SafeInstructionResult<TResult> Result
         {
