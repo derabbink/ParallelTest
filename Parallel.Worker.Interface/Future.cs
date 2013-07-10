@@ -19,7 +19,8 @@ namespace Parallel.Worker.Interface
         {
             PreExecution,
             Executing,
-            Completed
+            Completed,
+            Cancelled
         }
 
         private readonly ManualResetEvent _completedWaitHandle;
@@ -53,6 +54,11 @@ namespace Parallel.Worker.Interface
             _completedWaitHandle.Set();
         }
 
+        protected void SetCancelled()
+        {
+            State = FutureState.Cancelled;
+        }
+
         /// <summary>
         /// Blocks until <see cref="State"/> is Completed
         /// </summary>
@@ -62,12 +68,16 @@ namespace Parallel.Worker.Interface
         }
 
         /// <summary>
-        /// Cancels any running execution. Never fails.
+        /// Cancels any running execution.
+        /// Cancellation is ignored if the future already completed or cancelled.
         /// </summary>
+        [MethodImpl(MethodImplOptions.Synchronized)]
         public void Cancel()
         {
-            if (State == FutureState.Executing)
-                throw new NotImplementedException();
+            if (State == FutureState.PreExecution || State == FutureState.Executing)
+            {
+                SetCancelled();
+            }
         }
     }
 
