@@ -21,19 +21,32 @@ namespace Parallel.Worker.Interface
             where TArgument : class
             where TResult : class
         {
-            return ExecuteGeneric(instruction, argument, CompleteFuture);
+            return ExecuteGeneric(instruction, argument, CreateFuture<TResult>, CompleteFuture);
         }
 
         internal static Future<TResult> ExecuteGeneric<TArgument, TResult>(Func<TArgument, TResult> instruction,
-                                                                           TArgument argument, Action<Future<TResult>,
-                                                                           SafeInstruction<TArgument, TResult>> completeFuture)
+                                                                           TArgument argument,
+                                                                           Func<Future<TResult>> createFuture, 
+                                                                           Action<Future<TResult>, SafeInstruction<TArgument, TResult>> completeFuture)
             where TArgument : class
             where TResult : class
         {
-            Future<TResult> future = new Future<TResult>();
+            Future<TResult> future = createFuture();
             SafeInstruction<TArgument, TResult> safeInstruction = new SafeInstruction<TArgument, TResult>(instruction, argument);
             completeFuture(future, safeInstruction);
             return future;
+        }
+
+        protected virtual Future<TResult> CreateFuture<TResult>()
+            where TResult : class
+        {
+            return CreateFutureGeneric<TResult>();
+        }
+
+        internal static Future<TResult> CreateFutureGeneric<TResult>()
+            where TResult : class
+        {
+            return new Future<TResult>();
         }
 
         /// <summary>
@@ -68,9 +81,14 @@ namespace Parallel.Worker.Interface
     {
         public Future<TResult> Execute(Func<TArgument, TResult> instruction, TArgument argument)
         {
-            return Executor.ExecuteGeneric(instruction, argument, CompleteFuture);
+            return Executor.ExecuteGeneric(instruction, argument, CreateFuture, CompleteFuture);
         }
 
+        protected virtual Future<TResult> CreateFuture()
+        {
+            return Executor.CreateFutureGeneric<TResult>();
+        }
+        
         protected virtual void CompleteFuture(Future<TResult> future,
                                               SafeInstruction<TArgument, TResult> safeInstruction)
         {

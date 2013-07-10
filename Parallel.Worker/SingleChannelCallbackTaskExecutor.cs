@@ -15,6 +15,11 @@ namespace Parallel.Worker
         {
         }
 
+        protected override Interface.Future<TResult> CreateFuture()
+        {
+            return TaskExecutor.CreateFutureGeneric<TResult>();
+        }
+
         protected override void CompleteFuture(Interface.Future<TResult> future, Interface.Instruction.SafeInstruction<TArgument, TResult> safeInstruction)
         {
             Task.Factory.StartNew(() => base.CompleteFuture(future, safeInstruction));

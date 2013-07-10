@@ -10,6 +10,17 @@ namespace Parallel.Worker
 {
     public class TaskExecutor : Executor
     {
+        protected override Future<TResult> CreateFuture<TResult>()
+        {
+            return CreateFutureGeneric<TResult>();
+        }
+
+        internal static Future<TResult> CreateFutureGeneric<TResult>()
+            where TResult : class
+        {
+            return new Future<TResult>();
+        }
+
         /// <summary>
         /// Invokes an instruction and completes the corresponding future accordingly, until completion.
         /// Process is run as a new Task.
@@ -45,6 +56,10 @@ namespace Parallel.Worker
         where TArgument : class
         where TResult : class
     {
+        protected override Future<TResult> CreateFuture()
+        {
+            return TaskExecutor.CreateFutureGeneric<TResult>();
+        }
 
         protected override void CompleteFuture(Future<TResult> future,
                                                SafeInstruction<TArgument, TResult> safeInstruction)
