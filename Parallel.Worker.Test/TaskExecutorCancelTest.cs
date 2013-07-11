@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using Parallel.Worker.Interface;
+using Parallel.Worker.Interface.Instruction;
 
 namespace Parallel.Worker.Test
 {
@@ -92,6 +94,24 @@ namespace Parallel.Worker.Test
             //let instruction continue
             _instructionHoldingEvent.Set();
             Assert.That(future.State, Is.EqualTo(Future.FutureState.Cancelled));
+        }
+        #endregion
+
+        #region multiple parallel tests
+        [Test]
+        public void CancelMultiSuccessful()
+        {
+            var future1 = _executor.Execute(_identityBlocking, _argumentSuccessful);
+            var future2 = _executor.Execute(_identityBlocking, _argumentSuccessful);
+            _instructionNotifyingEvent.WaitOne();
+
+            Assert.That(future1.State, Is.EqualTo(Future.FutureState.PreExecution).Or.EqualTo(Future.FutureState.Executing));
+            Assert.That(future2.State, Is.EqualTo(Future.FutureState.PreExecution).Or.EqualTo(Future.FutureState.Executing));
+
+            Future.CancelAll(new[] { future1, future2 });
+
+            Assert.That(future1.State, Is.EqualTo(Future.FutureState.Cancelled));
+            Assert.That(future2.State, Is.EqualTo(Future.FutureState.Cancelled));
         }
         #endregion
 

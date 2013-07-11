@@ -69,6 +69,12 @@ namespace Parallel.Worker.Interface
             _completedWaitHandle.WaitOne();
         }
 
+        public static void WaitAll(IEnumerable<Future> futures)
+        {
+            foreach(Future f in futures)
+                f.Wait();
+        }
+
         /// <summary>
         /// Cancels any running execution.
         /// Cancellation is ignored if the future already completed or cancelled.
@@ -82,6 +88,12 @@ namespace Parallel.Worker.Interface
                     _cancellationHandler();
                 State = FutureState.Cancelled;
             }
+        }
+
+        public static void CancelAll(IEnumerable<Future> futures)
+        {
+            foreach(Future f in futures)
+                f.Cancel();
         }
     }
 

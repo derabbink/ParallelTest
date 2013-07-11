@@ -97,6 +97,24 @@ namespace Parallel.Worker.Test
         }
         #endregion
 
+        #region multiple parallel tests
+        [Test]
+        public void CancelMultiSuccessful()
+        {
+            var future1 = _executorSuccessful.Execute(_identityBlocking, _argumentSuccessful);
+            var future2 = _executorSuccessful.Execute(_identityBlocking, _argumentSuccessful);
+            _instructionNotifyingEvent.WaitOne();
+
+            Assert.That(future1.State, Is.EqualTo(Future.FutureState.PreExecution).Or.EqualTo(Future.FutureState.Executing));
+            Assert.That(future2.State, Is.EqualTo(Future.FutureState.PreExecution).Or.EqualTo(Future.FutureState.Executing));
+
+            Future.CancelAll(new[] { future1, future2 });
+
+            Assert.That(future1.State, Is.EqualTo(Future.FutureState.Cancelled));
+            Assert.That(future2.State, Is.EqualTo(Future.FutureState.Cancelled));
+        }
+        #endregion
+
         #endregion
     }
 }
