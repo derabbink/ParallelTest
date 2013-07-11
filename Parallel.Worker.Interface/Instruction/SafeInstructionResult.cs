@@ -57,6 +57,11 @@ namespace Parallel.Worker.Interface.Instruction
             return new SafeInstructionResult<TResult>(ResultState.Succeeded, value, null);
         }
 
+        internal new static SafeInstructionResult<TResult> Failed(Exception exception)
+        {
+            return new SafeInstructionResult<TResult>(ResultState.Failed, null, exception);
+        }
+
         public TResult Value { get; private set; }
 
         public new TResult Unwrap()

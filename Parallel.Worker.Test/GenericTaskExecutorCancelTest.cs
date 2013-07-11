@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using Parallel.Worker.Interface;
+using Parallel.Worker.Interface.Instruction;
 
 namespace Parallel.Worker.Test
 {
@@ -57,43 +59,43 @@ namespace Parallel.Worker.Test
         [Test]
         public void SequentialCancellationSuccessful()
         {
-            Future<object> future = _executorSuccessful.Execute(_identity, _argumentSuccessful);
+            Future<SafeInstructionResult<object>> future = _executorSuccessful.Execute(_identity, _argumentSuccessful);
             future.Wait();
             future.Cancel();
-            Assert.That(future.State, Is.EqualTo(Future.FutureState.Completed));
+            Assert.That(future.Status, Is.EqualTo(TaskStatus.Canceled));
         }
 
         [Test]
         public void SequentialCancellationFailure()
         {
-            Future<object> future = _executorFailure.Execute(_throw, _argumentFailure);
+            Future<SafeInstructionResult<object>> future = _executorFailure.Execute(_throw, _argumentFailure);
             future.Wait();
             future.Cancel();
-            Assert.That(future.State, Is.EqualTo(Future.FutureState.Completed));
+            Assert.That(future.Status, Is.EqualTo(TaskStatus.Canceled));
         }
 
         [Test]
         public void BlockingCancellationSuccessful()
         {
-            Future<object> future = _executorSuccessful.Execute(_identityBlocking, _argumentSuccessful);
+            Future<SafeInstructionResult<object>> future = _executorSuccessful.Execute(_identityBlocking, _argumentSuccessful);
             //wait for executor to be in middle of instruction
             _instructionNotifyingEvent.WaitOne();
             future.Cancel();
             //let instruction continue
             _instructionHoldingEvent.Set();
-            Assert.That(future.State, Is.EqualTo(Future.FutureState.Cancelled));
+            Assert.That(future.Status, Is.EqualTo(TaskStatus.Canceled));
         }
 
         [Test]
         public void BlockingCancellationFailure()
         {
-            Future<object> future = _executorFailure.Execute(_throwBlocking, _argumentFailure);
+            Future<SafeInstructionResult<object>> future = _executorFailure.Execute(_throwBlocking, _argumentFailure);
             //wait for executor to be in middle of instruction
             _instructionNotifyingEvent.WaitOne();
             future.Cancel();
             //let instruction continue
             _instructionHoldingEvent.Set();
-            Assert.That(future.State, Is.EqualTo(Future.FutureState.Cancelled));
+            Assert.That(future.Status, Is.EqualTo(TaskStatus.Canceled));
         }
         #endregion
 
@@ -105,13 +107,13 @@ namespace Parallel.Worker.Test
             var future2 = _executorSuccessful.Execute(_identityBlocking, _argumentSuccessful);
             _instructionNotifyingEvent.WaitOne();
 
-            Assert.That(future1.State, Is.EqualTo(Future.FutureState.PreExecution).Or.EqualTo(Future.FutureState.Executing));
-            Assert.That(future2.State, Is.EqualTo(Future.FutureState.PreExecution).Or.EqualTo(Future.FutureState.Executing));
+            Assert.That(future1.Status, Is.Not.EqualTo(TaskStatus.RanToCompletion).And.Not.EqualTo(TaskStatus.Faulted).And.Not.EqualTo(TaskStatus.Canceled));
+            Assert.That(future1.Status, Is.Not.EqualTo(TaskStatus.RanToCompletion).And.Not.EqualTo(TaskStatus.Faulted).And.Not.EqualTo(TaskStatus.Canceled));
 
-            Future.CancelAll(new[] { future1, future2 });
+            Future<SafeInstructionResult<object>>.CancelAll(new[] { future1, future2 });
 
-            Assert.That(future1.State, Is.EqualTo(Future.FutureState.Cancelled));
-            Assert.That(future2.State, Is.EqualTo(Future.FutureState.Cancelled));
+            Assert.That(future1.Status, Is.EqualTo(TaskStatus.Canceled));
+            Assert.That(future2.Status, Is.EqualTo(TaskStatus.Canceled));
         }
         #endregion
 

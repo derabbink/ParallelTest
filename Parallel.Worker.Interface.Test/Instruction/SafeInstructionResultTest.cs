@@ -31,8 +31,10 @@ namespace Parallel.Worker.Interface.Test.Instruction
         [Test]
         public void SuccessfulFailed()
         {
-            var result = SafeInstructionResult.Failed();
+            var expectedException = new Exception("Expected");
+            var result = SafeInstructionResult.Failed(expectedException);
             Assert.That(result.State == SafeInstructionResult.ResultState.Failed);
+            Assert.That(result.Exception, Is.SameAs(expectedException));
         }
 
         [Test]

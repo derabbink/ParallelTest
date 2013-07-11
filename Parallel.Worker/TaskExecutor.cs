@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using Parallel.Worker.Interface;
 using Parallel.Worker.Interface.Instruction;
 
@@ -12,16 +11,16 @@ namespace Parallel.Worker
     public class TaskExecutor : Executor
     {
         /// <summary>
-        /// completes a future in a new Task.
+        /// completes a future in parallel.
         /// </summary>
         /// <typeparam name="TResult"></typeparam>
         /// <param name="future"></param>
-        protected override void CompleteFuture<TResult>(Task<SafeInstructionResult<TResult>> future)
+        protected override void CompleteFuture<TResult>(Future<SafeInstructionResult<TResult>> future)
         {
             CompleteFutureGeneric(future);
         }
 
-        internal new static void CompleteFutureGeneric<TResult>(Task<SafeInstructionResult<TResult>> future)
+        internal new static void CompleteFutureGeneric<TResult>(Future<SafeInstructionResult<TResult>> future)
             where TResult : class
         {
             future.Start();
@@ -33,10 +32,10 @@ namespace Parallel.Worker
         where TResult : class
     {
         /// <summary>
-        /// completes a future in a new task
+        /// completes a future in parallel
         /// </summary>
         /// <param name="future"></param>
-        protected override void CompleteFuture(Task<SafeInstructionResult<TResult>> future)
+        protected override void CompleteFuture(Future<SafeInstructionResult<TResult>> future)
         {
             TaskExecutor.CompleteFutureGeneric(future);
         }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using Parallel.Worker.Communication.SingleChannelCallback;
 using Parallel.Worker.Interface;
@@ -40,9 +41,9 @@ namespace Parallel.Worker.Test
         public void ExecuteSuccessful()
         {
             var argument = new object();
-            Future<object> future = _successExecutor.Execute(_identity, argument);
+            Future<SafeInstructionResult<object>> future = _successExecutor.Execute(_identity, argument);
             future.Wait();
-            Assert.That(future.Result.State, Is.EqualTo(SafeInstructionResult.ResultState.Succeeded));
+            Assert.That(future.Result.State, Is.EqualTo(SafeInstructionResult.ResultState.Failed));
             Assert.That(future.Result.Value, Is.SameAs(argument));
         }
 
@@ -50,7 +51,7 @@ namespace Parallel.Worker.Test
         public void ExecuteFailure()
         {
             var expectedException = new Exception("Expected");
-            Future<object> future = _failureExecutor.Execute(_throw, expectedException);
+            Future<SafeInstructionResult<object>> future = _failureExecutor.Execute(_throw, expectedException);
             future.Wait();
             Assert.That(future.Result.State, Is.EqualTo(SafeInstructionResult.ResultState.Failed));
             Assert.That(future.Result.Exception, Is.SameAs(expectedException));

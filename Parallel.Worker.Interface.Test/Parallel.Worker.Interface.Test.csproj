@@ -63,8 +63,6 @@
     </CodeAnalysisDependentAssemblyPaths>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="FutureStateTest.cs" />
-    <Compile Include="FutureWaitTest.cs" />
     <Compile Include="Instruction\SafeInstructionResultTest.cs" />
     <Compile Include="Instruction\SafeInstructionTest.cs" />
     <Compile Include="Instruction\WrapperTest.cs" />

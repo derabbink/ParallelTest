@@ -51,7 +51,7 @@ namespace Parallel.Worker.Test
         {
             var future = _executor.Execute(_identityBlocking, _argumentSuccessful);
             //_instructionNotifyingEvent.WaitOne(); //makes sure future is in Executing state
-            Assert.That(future.State, Is.EqualTo(Future.FutureState.PreExecution).Or.EqualTo(Future.FutureState.Executing));
+            Assert.That(future.Status, Is.Not.EqualTo(TaskStatus.RanToCompletion).And.Not.EqualTo(TaskStatus.Faulted).And.Not.EqualTo(TaskStatus.Canceled));
             //cleanup
             _instructionHoldingEvent.Set();
         }
@@ -60,10 +60,10 @@ namespace Parallel.Worker.Test
         public void ExecuteProducesIncompleteFutureThatCompletesEventually()
         {
             var future = _executor.Execute(_identityBlocking, _argumentSuccessful);
-            Assert.That(future.State, Is.EqualTo(Future.FutureState.PreExecution).Or.EqualTo(Future.FutureState.Executing));
+            Assert.That(future.Status, Is.Not.EqualTo(TaskStatus.RanToCompletion).And.Not.EqualTo(TaskStatus.Faulted).And.Not.EqualTo(TaskStatus.Canceled));
             _instructionHoldingEvent.Set();
             future.Wait();
-            Assert.That(future.State, Is.EqualTo(Future.FutureState.Completed));
+            Assert.That(future.Status, Is.EqualTo(TaskStatus.RanToCompletion));
         }
 
         [Test]
@@ -72,7 +72,7 @@ namespace Parallel.Worker.Test
             var expected = _argumentSuccessful;
             var future = _executor.Execute(_identity, _argumentSuccessful);
             future.Wait();
-            Assert.That(future.State, Is.EqualTo(Future.FutureState.Completed));
+            Assert.That(future.Status, Is.EqualTo(TaskStatus.RanToCompletion));
             Assert.That(future.Result.State, Is.EqualTo(SafeInstructionResult.ResultState.Succeeded));
             Assert.That(future.Result.Value, Is.SameAs(expected));
         }
@@ -83,7 +83,7 @@ namespace Parallel.Worker.Test
             var expected = _argumentFailure;
             var future = _executor.Execute(_throw, _argumentFailure);
             future.Wait();
-            Assert.That(future.State, Is.EqualTo(Future.FutureState.Completed));
+            Assert.That(future.Status, Is.EqualTo(TaskStatus.RanToCompletion));
             Assert.That(future.Result.State, Is.EqualTo(SafeInstructionResult.ResultState.Failed));
             Assert.That(future.Result.Exception, Is.SameAs(expected));
         }
@@ -97,14 +97,14 @@ namespace Parallel.Worker.Test
             var future2 = _executor.Execute(_identityBlocking, _argumentSuccessful);
             _instructionNotifyingEvent.WaitOne();
 
-            Assert.That(future1.State, Is.EqualTo(Future.FutureState.PreExecution).Or.EqualTo(Future.FutureState.Executing));
-            Assert.That(future2.State, Is.EqualTo(Future.FutureState.PreExecution).Or.EqualTo(Future.FutureState.Executing));
+            Assert.That(future1.Status, Is.Not.EqualTo(TaskStatus.RanToCompletion).And.Not.EqualTo(TaskStatus.Faulted).And.Not.EqualTo(TaskStatus.Canceled));
+            Assert.That(future2.Status, Is.Not.EqualTo(TaskStatus.RanToCompletion).And.Not.EqualTo(TaskStatus.Faulted).And.Not.EqualTo(TaskStatus.Canceled));
             
             Task.Factory.StartNew(() => _instructionHoldingEvent.Set());
             Future.WaitAll(new[] {future1, future2});
             
-            Assert.That(future1.State, Is.EqualTo(Future.FutureState.Completed));
-            Assert.That(future2.State, Is.EqualTo(Future.FutureState.Completed));
+            Assert.That(future1.Status, Is.EqualTo(TaskStatus.RanToCompletion));
+            Assert.That(future2.Status, Is.EqualTo(TaskStatus.RanToCompletion));
             Assert.That(future1.Result.State, Is.EqualTo(SafeInstructionResult.ResultState.Succeeded));
             Assert.That(future2.Result.State, Is.EqualTo(SafeInstructionResult.ResultState.Succeeded));
             Assert.That(future1.Result.Value, Is.SameAs(expected));

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Parallel.Worker.Interface;
 
 namespace Parallel.Coordinator.Interface.Instruction
@@ -18,7 +19,7 @@ namespace Parallel.Coordinator.Interface.Instruction
         private IExecutor<TArgument, TResult> _executorGeneric;
         private Func<TArgument, TResult> _instruction;
         private TArgument _argument;
-        private Future<TResult> _future;
+        private Task<TResult> _future;
 
         public CoordinatedInstruction(IExecutor executor, Func<TArgument, TResult> instruction, TArgument argument)
         {
@@ -39,9 +40,10 @@ namespace Parallel.Coordinator.Interface.Instruction
 
         private bool Generic { get { return _executor == null; } }
 
-        public Future<CoordinatedInstructionResult<TResult>> Invoke()
+        public Task<CoordinatedInstructionResult<TResult>> Invoke()
         {
-
+            //TODO
+            return null;
         }
     }
 }

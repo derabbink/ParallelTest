@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Parallel.Worker.Interface;
 using Parallel.Worker.Interface.Instruction;
 
@@ -16,30 +15,30 @@ namespace Parallel.Worker
     public class Executor : IExecutor
     {
         /// <summary>
-        /// Executes the instruction and returns a future/task representing the result
+        /// Executes the instruction and returns a future representing the result
         /// </summary>
         /// <typeparam name="TArgument"></typeparam>
         /// <typeparam name="TResult"></typeparam>
         /// <param name="instruction"></param>
         /// <param name="argument"></param>
         /// <returns></returns>
-        public Task<SafeInstructionResult<TResult>> Execute<TArgument, TResult>(Func<TArgument, TResult> instruction, TArgument argument)
+        public Future<SafeInstructionResult<TResult>> Execute<TArgument, TResult>(Func<TArgument, TResult> instruction, TArgument argument)
             where TArgument : class
             where TResult : class
         {
             return ExecuteGeneric(instruction, argument, CreateSafeInstruction, CompleteFuture);
         }
 
-        internal static Task<SafeInstructionResult<TResult>> ExecuteGeneric<TArgument, TResult>(
+        internal static Future<SafeInstructionResult<TResult>> ExecuteGeneric<TArgument, TResult>(
                 Func<TArgument, TResult> instruction,
                 TArgument argument,
                 Func<Func<TArgument, TResult>, TArgument, SafeInstruction<TArgument, TResult>> createSafeInstruction,
-                Action<Task<SafeInstructionResult<TResult>>> completeFuture)
+                Action<Future<SafeInstructionResult<TResult>>> completeFuture)
             where TArgument : class
             where TResult : class
         {
             SafeInstruction<TArgument, TResult> safeInstruction = createSafeInstruction(instruction, argument);
-            Task<SafeInstructionResult<TResult>> future = new Task<SafeInstructionResult<TResult>>(safeInstruction.Invoke);
+            Future<SafeInstructionResult<TResult>> future = Future<SafeInstructionResult<TResult>>.Create(safeInstruction.Invoke);
             completeFuture(future);
             return future;
         }
@@ -63,7 +62,7 @@ namespace Parallel.Worker
         /// </summary>
         /// <typeparam name="TResult"></typeparam>
         /// <param name="future"></param>
-        protected virtual void CompleteFuture<TResult>(Task<SafeInstructionResult<TResult>> future)
+        protected virtual void CompleteFuture<TResult>(Future<SafeInstructionResult<TResult>> future)
             where TResult : class
         {
             CompleteFutureGeneric(future);
@@ -74,7 +73,7 @@ namespace Parallel.Worker
         /// </summary>
         /// <typeparam name="TResult"></typeparam>
         /// <param name="future"></param>
-        internal static void CompleteFutureGeneric<TResult>(Task<SafeInstructionResult<TResult>> future)
+        internal static void CompleteFutureGeneric<TResult>(Future<SafeInstructionResult<TResult>> future)
             where TResult : class
         {
             future.RunSynchronously();
@@ -97,7 +96,7 @@ namespace Parallel.Worker
         /// <param name="instruction"></param>
         /// <param name="argument"></param>
         /// <returns></returns>
-        public Task<SafeInstructionResult<TResult>> Execute(Func<TArgument, TResult> instruction, TArgument argument)
+        public Future<SafeInstructionResult<TResult>> Execute(Func<TArgument, TResult> instruction, TArgument argument)
         {
             return Executor.ExecuteGeneric(instruction, argument, CreateSafeInstruction, CompleteFuture);
         }
@@ -107,7 +106,7 @@ namespace Parallel.Worker
             return Executor.CreateSafeInstructionGeneric(instruction, argument);
         }
 
-        protected virtual void CompleteFuture(Task<SafeInstructionResult<TResult>> future)
+        protected virtual void CompleteFuture(Future<SafeInstructionResult<TResult>> future)
         {
             Executor.CompleteFutureGeneric(future);
         }

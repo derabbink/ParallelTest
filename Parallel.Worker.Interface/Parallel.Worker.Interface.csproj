@@ -94,6 +94,7 @@
     <Compile Include="Communication\SingleChannelCallback\IServer.cs" />
     <Compile Include="Events\EventHandlerRaise.cs" />
     <Compile Include="Events\SingleChannelCallback\CallbackEventArgs.cs" />
+    <Compile Include="Future.cs" />
     <Compile Include="IExecutor.cs" />
     <Compile Include="Instruction\CallbackInstruction.cs" />
     <Compile Include="Instruction\SafeInstruction.cs" />

@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using Parallel.Worker.Interface;
+using Parallel.Worker.Interface.Instruction;
 
 namespace Parallel.Worker.Test
 {
@@ -38,19 +39,19 @@ namespace Parallel.Worker.Test
         [Test]
         public void SequentialCancellationSuccessful()
         {
-            Future<object> future = _executor.Execute(_identity, _argumentSuccessful);
+            Future<SafeInstructionResult<object>> future = _executor.Execute(_identity, _argumentSuccessful);
             //future.Wait() not required
             future.Cancel();
-            Assert.That(future.State, Is.EqualTo(Future.FutureState.Completed));
+            Assert.That(future.Status, Is.EqualTo(TaskStatus.Canceled));
         }
 
         [Test]
         public void SequentialCancellationFailure()
         {
-            Future<object> future = _executor.Execute(_throw, _argumentFailure);
+            Future<SafeInstructionResult<object>> future = _executor.Execute(_throw, _argumentFailure);
             //future.Wait() not required
             future.Cancel();
-            Assert.That(future.State, Is.EqualTo(Future.FutureState.Completed));
+            Assert.That(future.Status, Is.EqualTo(TaskStatus.Canceled));
         }
         #endregion
 

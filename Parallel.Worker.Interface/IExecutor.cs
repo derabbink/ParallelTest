@@ -9,7 +9,7 @@ namespace Parallel.Worker.Interface
 {
     public interface IExecutor
     {
-        Task<SafeInstructionResult<TResult>> Execute<TArgument, TResult>(Func<TArgument, TResult> instruction, TArgument argument)
+        Future<SafeInstructionResult<TResult>> Execute<TArgument, TResult>(Func<TArgument, TResult> instruction, TArgument argument)
             where TArgument : class
             where TResult : class;
     }
@@ -18,6 +18,6 @@ namespace Parallel.Worker.Interface
         where TArgument : class
         where TResult : class
     {
-        Task<SafeInstructionResult<TResult>> Execute(Func<TArgument, TResult> instruction, TArgument argument);
+        Future<SafeInstructionResult<TResult>> Execute(Func<TArgument, TResult> instruction, TArgument argument);
     }
 }

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using NUnit.Framework;
 using Parallel.Worker.Communication.SingleChannelCallback;
-using Parallel.Worker.Events.SingleChannelCallback;
+using Parallel.Worker.Interface.Events.SingleChannelCallback;
 using Parallel.Worker.Interface.Instruction;
 
 namespace Parallel.Worker.Test.Communication.SingleChannelCallback

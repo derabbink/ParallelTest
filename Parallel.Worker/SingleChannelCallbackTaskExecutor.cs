@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Parallel.Worker.Communication.SingleChannelCallback;
+using Parallel.Worker.Interface;
 using Parallel.Worker.Interface.Communication.SingleChannelCallback;
 using Parallel.Worker.Interface.Instruction;
 
@@ -29,7 +30,7 @@ namespace Parallel.Worker
         /// completes a future in a new task
         /// </summary>
         /// <param name="future"></param>
-        protected override void CompleteFuture(Task<SafeInstructionResult<TResult>> future)
+        protected override void CompleteFuture(Future<SafeInstructionResult<TResult>> future)
         {
             TaskExecutor.CompleteFutureGeneric(future);
         }
