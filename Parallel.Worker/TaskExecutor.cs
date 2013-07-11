@@ -57,6 +57,7 @@ namespace Parallel.Worker
         /// <param name="future"></param>
         /// <param name="companion"></param>
         /// <param name="safeInstruction"></param>
+        /// <param name="completeFuture"></param>
         internal static void CompleteFutureGeneric<TArgument, TResult>(Future<TResult> future,
                                                                        CancellationTokenSource companion,
                                                                        SafeInstruction<TArgument, TResult> safeInstruction,

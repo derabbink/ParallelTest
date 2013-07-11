@@ -24,6 +24,11 @@ namespace Parallel.Worker
         {
         }
 
+        protected override CancellationTokenSource CreateFutureCompanion()
+        {
+            return TaskExecutor.CreateFutureCompanionGeneric();
+        }
+
         protected override Interface.Future<TResult> CreateFuture(CancellationTokenSource companion)
         {
             return TaskExecutor.CreateFutureGeneric<TResult>(companion);
@@ -31,7 +36,7 @@ namespace Parallel.Worker
 
         protected override void CompleteFuture(Interface.Future<TResult> future, CancellationTokenSource companion, SafeInstruction<TArgument, TResult> safeInstruction)
         {
-            Task.Factory.StartNew(() => base.CompleteFuture(future, companion, safeInstruction));
+            TaskExecutor.CompleteFutureGeneric(future, companion, safeInstruction, base.CompleteFuture);
         }
     }
 }
