@@ -43,5 +43,15 @@ namespace Parallel.Worker.Interface.Instruction
                 };
             return wrapped;
         }
+
+        public static Action<TArgument, Action<TResult>> ReturnToCallback(Func<TArgument, TResult> instruction)
+        {
+            Action<TArgument, Action<TResult>> wrapped = (arg, callback) =>
+                {
+                    var result = instruction(arg);
+                    callback(result);
+                };
+            return wrapped;
+        }
     }
 }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using Parallel.Worker.Interface.Instruction;
 
-namespace Parallel.Worker.Communication.SingleChannelCallback
+namespace Parallel.Worker.Interface.Communication.SingleChannelCallback
 {
     public interface IServer<TArgument, TResult>
         where TArgument : class

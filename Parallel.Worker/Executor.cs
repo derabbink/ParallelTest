@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Parallel.Worker.Interface;
 using Parallel.Worker.Interface.Instruction;
 
@@ -12,92 +13,71 @@ namespace Parallel.Worker
     /// Can deal with different argument and return types, each Execute
     /// Also contains static default implementation for virtual methods
     /// </summary>
-    public class Executor : Executor<object>
-    {
-        internal static Future<TResult> ExecuteGeneric<TArgument, TResult, TFutureCompanion>(Func<TArgument, TResult> instruction,
-                                                                                             TArgument argument,
-                                                                                             Func<TFutureCompanion> createFutureCompanion,
-                                                                                             Func<TFutureCompanion, Future<TResult>> createFuture, 
-                                                                                             Action<Future<TResult>, TFutureCompanion, SafeInstruction<TArgument, TResult>> completeFuture)
-            where TArgument : class
-            where TResult : class
-        {
-            TFutureCompanion companion = createFutureCompanion();
-            Future<TResult> future = createFuture(companion);
-            SafeInstruction<TArgument, TResult> safeInstruction = new SafeInstruction<TArgument, TResult>(instruction, argument);
-            completeFuture(future, companion, safeInstruction);
-            return future;
-        }
-
-        internal static TFutureCompanion CreateFutureCompanionGeneric<TFutureCompanion>()
-            where TFutureCompanion : class
-        {
-            return null;
-        }
-
-        internal static Future<TResult> CreateFutureGeneric<TResult>()
-            where TResult : class
-        {
-            return new Future<TResult>();
-        }
-
-        internal static void CompleteFutureGeneric<TArgument, TResult>(Future<TResult> future,
-                                                                       SafeInstruction<TArgument, TResult> safeInstruction)
-            where TArgument : class
-            where TResult : class
-        {
-            future.SetExecuting();
-            SafeInstructionResult<TResult> result = safeInstruction.Invoke();
-            future.SetCompleted(result);
-        }
-    }
-
-    /// <summary>
-    /// Base implementation. Executes instructions sequentially.
-    /// Can deal with different argument and return types, each Execute.
-    /// </summary>
-    /// <typeparam name="TFutureCompanion"></typeparam>
-    [Obsolete("Only used by Executor implementers", false)]
-    public class Executor<TFutureCompanion> : IExecutor
-        where TFutureCompanion : class
+    public class Executor : IExecutor
     {
         /// <summary>
-        /// Executes the instruction and returns a completed future.
+        /// Executes the instruction and returns a future/task representing the result
         /// </summary>
         /// <typeparam name="TArgument"></typeparam>
         /// <typeparam name="TResult"></typeparam>
         /// <param name="instruction"></param>
         /// <param name="argument"></param>
         /// <returns></returns>
-        public Future<TResult> Execute<TArgument, TResult>(Func<TArgument, TResult> instruction, TArgument argument)
+        public Task<SafeInstructionResult<TResult>> Execute<TArgument, TResult>(Func<TArgument, TResult> instruction, TArgument argument)
             where TArgument : class
             where TResult : class
         {
-            return Executor.ExecuteGeneric(instruction, argument, CreateFutureCompanion, CreateFuture<TResult>, CompleteFuture);
+            return ExecuteGeneric(instruction, argument, CreateSafeInstruction, CompleteFuture);
+        }
+
+        internal static Task<SafeInstructionResult<TResult>> ExecuteGeneric<TArgument, TResult>(
+                Func<TArgument, TResult> instruction,
+                TArgument argument,
+                Func<Func<TArgument, TResult>, TArgument, SafeInstruction<TArgument, TResult>> createSafeInstruction,
+                Action<Task<SafeInstructionResult<TResult>>> completeFuture)
+            where TArgument : class
+            where TResult : class
+        {
+            SafeInstruction<TArgument, TResult> safeInstruction = createSafeInstruction(instruction, argument);
+            Task<SafeInstructionResult<TResult>> future = new Task<SafeInstructionResult<TResult>>(safeInstruction.Invoke);
+            completeFuture(future);
+            return future;
+        }
+
+        protected virtual SafeInstruction<TArgument, TResult> CreateSafeInstruction<TArgument, TResult>(Func<TArgument, TResult> instruction, TArgument argument)
+            where TArgument : class
+            where TResult : class
+        {
+            return CreateSafeInstructionGeneric(instruction, argument);
+        }
+
+        internal static SafeInstruction<TArgument, TResult> CreateSafeInstructionGeneric<TArgument, TResult>(Func<TArgument, TResult> instruction, TArgument argument)
+            where TArgument : class
+            where TResult : class
+        {
+            return new SafeInstruction<TArgument, TResult>(instruction, argument);
         }
 
         /// <summary>
-        /// object created here will be passed into CreateFuture and CompleteFuture
+        /// method that causes the future to complete
         /// </summary>
-        /// <returns></returns>
-        protected virtual TFutureCompanion CreateFutureCompanion()
-        {
-            return Executor.CreateFutureCompanionGeneric<TFutureCompanion>();
-        }
-
-        protected virtual Future<TResult> CreateFuture<TResult>(TFutureCompanion companion)
+        /// <typeparam name="TResult"></typeparam>
+        /// <param name="future"></param>
+        protected virtual void CompleteFuture<TResult>(Task<SafeInstructionResult<TResult>> future)
             where TResult : class
         {
-            return Executor.CreateFutureGeneric<TResult>();
+            CompleteFutureGeneric(future);
         }
 
-        protected virtual void CompleteFuture<TArgument, TResult>(Future<TResult> future,
-                                                                  TFutureCompanion companion,
-                                                                  SafeInstruction<TArgument, TResult> safeInstruction)
-            where TArgument : class
+        /// <summary>
+        /// Used by both the generic and non-generic class
+        /// </summary>
+        /// <typeparam name="TResult"></typeparam>
+        /// <param name="future"></param>
+        internal static void CompleteFutureGeneric<TResult>(Task<SafeInstructionResult<TResult>> future)
             where TResult : class
         {
-            Executor.CompleteFutureGeneric(future, safeInstruction);
+            future.RunSynchronously();
         }
     }
 
@@ -107,40 +87,9 @@ namespace Parallel.Worker
     /// </summary>
     /// <typeparam name="TArgument"></typeparam>
     /// <typeparam name="TResult"></typeparam>
-    public class Executor<TArgument, TResult> : Executor<TArgument, TResult, object>, IExecutor<TArgument, TResult>
+    public class Executor<TArgument, TResult> : IExecutor<TArgument, TResult>
         where TArgument : class
         where TResult : class
-    {
-        protected override object CreateFutureCompanion()
-        {
-            return Executor.CreateFutureCompanionGeneric<object>();
-        }
-
-        protected override Future<TResult> CreateFuture(object companion)
-        {
-            return Executor.CreateFutureGeneric<TResult>();
-        }
-        
-        protected override void CompleteFuture(Future<TResult> future,
-                                               object companion,
-                                               SafeInstruction<TArgument, TResult> safeInstruction)
-        {
-            Executor.CompleteFutureGeneric(future, safeInstruction);
-        }
-    }
-
-    /// <summary>
-    /// Base implementation that can only deal with the same types of arguments and return statements.
-    /// Executes instructions sequentially.
-    /// </summary>
-    /// <typeparam name="TArgument"></typeparam>
-    /// <typeparam name="TResult"></typeparam>
-    /// <typeparam name="TFutureCompanion"></typeparam>
-    [Obsolete("Only used by Executor implementers", false)]
-    public class Executor<TArgument, TResult, TFutureCompanion> : IExecutor<TArgument, TResult>
-        where TArgument : class
-        where TResult : class
-        where TFutureCompanion : class
     {
         /// <summary>
         /// Executes the instruction and returns a completed future.
@@ -148,30 +97,19 @@ namespace Parallel.Worker
         /// <param name="instruction"></param>
         /// <param name="argument"></param>
         /// <returns></returns>
-        public Future<TResult> Execute(Func<TArgument, TResult> instruction, TArgument argument)
+        public Task<SafeInstructionResult<TResult>> Execute(Func<TArgument, TResult> instruction, TArgument argument)
         {
-            return Executor.ExecuteGeneric(instruction, argument, CreateFutureCompanion, CreateFuture, CompleteFuture);
+            return Executor.ExecuteGeneric(instruction, argument, CreateSafeInstruction, CompleteFuture);
         }
 
-        /// <summary>
-        /// object created here will be passed into CreateFuture and CompleteFuture
-        /// </summary>
-        /// <returns></returns>
-        protected virtual TFutureCompanion CreateFutureCompanion()
+        protected virtual SafeInstruction<TArgument, TResult> CreateSafeInstruction(Func<TArgument, TResult> instruction, TArgument argument)
         {
-            return Executor.CreateFutureCompanionGeneric<TFutureCompanion>();
+            return Executor.CreateSafeInstructionGeneric(instruction, argument);
         }
 
-        protected virtual Future<TResult> CreateFuture(TFutureCompanion companion)
+        protected virtual void CompleteFuture(Task<SafeInstructionResult<TResult>> future)
         {
-            return Executor.CreateFutureGeneric<TResult>();
-        }
-
-        protected virtual void CompleteFuture(Future<TResult> future,
-                                              TFutureCompanion companion,
-                                              SafeInstruction<TArgument, TResult> safeInstruction)
-        {
-            Executor.CompleteFutureGeneric(future, safeInstruction);
+            Executor.CompleteFutureGeneric(future);
         }
     }
 }

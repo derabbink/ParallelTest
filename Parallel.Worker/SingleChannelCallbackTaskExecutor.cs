@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Parallel.Worker.Communication.SingleChannelCallback;
+using Parallel.Worker.Interface.Communication.SingleChannelCallback;
 using Parallel.Worker.Interface.Instruction;
 
 namespace Parallel.Worker
@@ -16,7 +17,7 @@ namespace Parallel.Worker
     /// </summary>
     /// <typeparam name="TArgument"></typeparam>
     /// <typeparam name="TResult"></typeparam>
-    public class SingleChannelCallbackTaskExecutor<TArgument, TResult> : SingleChannelCallbackExecutor<TArgument, TResult, CancellationTokenSource>
+    public class SingleChannelCallbackTaskExecutor<TArgument, TResult> : SingleChannelCallbackExecutor<TArgument, TResult>
         where TArgument : class
         where TResult : class
     {
@@ -24,19 +25,13 @@ namespace Parallel.Worker
         {
         }
 
-        protected override CancellationTokenSource CreateFutureCompanion()
+        /// <summary>
+        /// completes a future in a new task
+        /// </summary>
+        /// <param name="future"></param>
+        protected override void CompleteFuture(Task<SafeInstructionResult<TResult>> future)
         {
-            return TaskExecutor.CreateFutureCompanionGeneric();
-        }
-
-        protected override Interface.Future<TResult> CreateFuture(CancellationTokenSource companion)
-        {
-            return TaskExecutor.CreateFutureGeneric<TResult>(companion);
-        }
-
-        protected override void CompleteFuture(Interface.Future<TResult> future, CancellationTokenSource companion, SafeInstruction<TArgument, TResult> safeInstruction)
-        {
-            TaskExecutor.CompleteFutureGeneric(future, companion, safeInstruction, base.CompleteFuture);
+            TaskExecutor.CompleteFutureGeneric(future);
         }
     }
 }

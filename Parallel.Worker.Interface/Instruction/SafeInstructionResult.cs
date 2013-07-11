@@ -13,36 +13,43 @@ namespace Parallel.Worker.Interface.Instruction
             Failed
         }
 
-        protected SafeInstructionResult(ResultState state)
+        protected SafeInstructionResult(ResultState state, Exception exception)
         {
             State = state;
+            Exception = exception;
         }
 
         internal static SafeInstructionResult Succeeded()
         {
-            return new SafeInstructionResult(ResultState.Succeeded);
+            return new SafeInstructionResult(ResultState.Succeeded, null);
         }
 
-        internal static SafeInstructionResult Failed()
+        internal static SafeInstructionResult Failed(Exception exception)
         {
-            return new SafeInstructionResult(ResultState.Failed);
+            return new SafeInstructionResult(ResultState.Failed, exception);
         }
 
         public ResultState State { get; private set; }
+
+        public Exception Exception { get; private set; }
+
+        public void Unwrap()
+        {
+            if (State == ResultState.Failed)
+                throw Exception;
+        }
     }
 
     /// <summary>
     /// Represents the result of an instruction
     /// wraps a result or an exeption alike
     /// </summary>
-    public class SafeInstructionResult<TResult> : SafeInstructionResult where TResult : class
+    public class SafeInstructionResult<TResult> : SafeInstructionResult
+        where TResult : class
     {
-        
-
-        protected SafeInstructionResult(ResultState state, TResult value, Exception exception) : base(state)
+        protected SafeInstructionResult(ResultState state, TResult value, Exception exception) : base(state, exception)
         {
             Value = value;
-            Exception = exception;
         }
 
         internal static SafeInstructionResult<TResult> Succeeded(TResult value)
@@ -50,13 +57,12 @@ namespace Parallel.Worker.Interface.Instruction
             return new SafeInstructionResult<TResult>(ResultState.Succeeded, value, null);
         }
 
-        internal static SafeInstructionResult<TResult> Failed(Exception error)
-        {
-            return new SafeInstructionResult<TResult>(ResultState.Failed, null, error);
-        }
-
         public TResult Value { get; private set; }
 
-        public Exception Exception { get; private set; }
+        public new TResult Unwrap()
+        {
+            base.Unwrap();
+            return Value;
+        }
     }
 }

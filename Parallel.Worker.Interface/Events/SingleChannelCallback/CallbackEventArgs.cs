@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using Parallel.Worker.Interface.Instruction;
 
-namespace Parallel.Worker.Events.SingleChannelCallback
+namespace Parallel.Worker.Interface.Events.SingleChannelCallback
 {
     public class CallbackEventArgs<TResult> : EventArgs
         where TResult : class

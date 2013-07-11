@@ -40,8 +40,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Class1.cs" />
+    <Compile Include="Coordinator.cs" />
+    <Compile Include="Exceptions\CancellationException.cs" />
+    <Compile Include="Instruction\CoordinatedInstruction.cs" />
+    <Compile Include="Instruction\CoordinatedInstructionResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Parallel.Worker.Interface\Parallel.Worker.Interface.csproj">
+      <Project>{68F1AFE5-1B89-4BC4-BD0C-89D3FFF13485}</Project>
+      <Name>Parallel.Worker.Interface</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
