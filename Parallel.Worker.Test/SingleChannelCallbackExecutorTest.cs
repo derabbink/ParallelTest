@@ -44,7 +44,7 @@ namespace Parallel.Worker.Test
             var argument = new object();
             Future<object> future = _successExecutor.Execute(_identity, argument);
             future.Wait();
-            Assert.That(future.IsFaulted, Is.True);
+            Assert.That(future.IsCompleted, Is.True);
             Assert.That(future.Result, Is.SameAs(argument));
         }
 

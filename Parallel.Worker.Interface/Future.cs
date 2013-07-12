@@ -85,6 +85,12 @@ namespace Parallel.Worker.Interface
             catch {}
         }
 
+        public static void WaitAll(IEnumerable<Future> futures)
+        {
+            foreach (Future f in futures)
+                f.Wait();
+        }
+
         public void Cancel()
         {
             _cancellationTokenSource.Cancel();
@@ -93,9 +99,7 @@ namespace Parallel.Worker.Interface
         public static void CancelAll(IEnumerable<Future> futures)
         {
             foreach (Future f in futures)
-            {
                 f.Cancel();
-            }
         }
 
         public void Unwrap()
@@ -189,6 +193,12 @@ namespace Parallel.Worker.Interface
             catch { }
         }
 
+        public static void WaitAll(IEnumerable<Future<TResult>> futures)
+        {
+            foreach (Future<TResult> f in futures)
+                f.Wait();
+        }
+
         public void Cancel()
         {
             _cancellationTokenSource.Cancel();
@@ -197,9 +207,7 @@ namespace Parallel.Worker.Interface
         public static void CancelAll(IEnumerable<Future<TResult>> futures)
         {
             foreach (Future<TResult> f in futures)
-            {
                 f.Cancel();
-            }
         }
 
         public TResult Unwrap()

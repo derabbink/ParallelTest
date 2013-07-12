@@ -22,7 +22,7 @@ namespace Parallel.Worker.Test
         private object _argumentSuccessful;
         private Func<CancellationToken, Exception, object> _throw;
         private Func<CancellationToken, object, object> _identityBlocking;
-        private ManualResetEvent _instructionBlockingResetEvent;
+        private ManualResetEventSlim _instructionBlockingResetEvent;
         private Exception _argumentFailure;
 
         #region setup
@@ -35,10 +35,10 @@ namespace Parallel.Worker.Test
             _successExecutor = new SingleChannelCallbackTaskExecutor<object, object>(_successChannel, _successChannel);
             _failureExecutor = new SingleChannelCallbackTaskExecutor<Exception, object>(_failureChannel, _failureChannel);
             _identity = (_, a) => a;
-            _instructionBlockingResetEvent = new ManualResetEvent(false);
-            _identityBlocking = (_, a) =>
+            _instructionBlockingResetEvent = new ManualResetEventSlim(false);
+            _identityBlocking = (ct, a) =>
                 {
-                    _instructionBlockingResetEvent.WaitOne();
+                    _instructionBlockingResetEvent.Wait(ct);
                     return a;
                 };
             _argumentSuccessful = new object();

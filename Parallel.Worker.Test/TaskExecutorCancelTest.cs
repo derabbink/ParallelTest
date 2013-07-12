@@ -18,8 +18,8 @@ namespace Parallel.Worker.Test
         private Func<CancellationToken, object, object> _identityBlocking;
         private Func<CancellationToken, Exception, object> _throw;
         private Func<CancellationToken, Exception, object> _throwBlocking;
-        private ManualResetEvent _instructionHoldingEvent;
-        private ManualResetEvent _instructionNotifyingEvent;
+        private ManualResetEventSlim _instructionHoldingEvent;
+        private ManualResetEventSlim _instructionNotifyingEvent;
         private object _argumentSuccessful;
         private Exception _argumentFailure;
 
@@ -29,20 +29,20 @@ namespace Parallel.Worker.Test
         public void Setup()
         {
             _executor = new TaskExecutor();
-            _instructionHoldingEvent = new ManualResetEvent(false);
-            _instructionNotifyingEvent = new ManualResetEvent(false);
+            _instructionHoldingEvent = new ManualResetEventSlim(false);
+            _instructionNotifyingEvent = new ManualResetEventSlim(false);
             _identity = (_, a) => a;
-            _identityBlocking = (_, a) =>
+            _identityBlocking = (ct, a) =>
             {
                 _instructionNotifyingEvent.Set();
-                _instructionHoldingEvent.WaitOne();
+                _instructionHoldingEvent.Wait(ct);
                 return a;
             };
             _throw = (_, e) => { throw e; };
-            _throwBlocking = (_, e) =>
+            _throwBlocking = (ct, e) =>
                 {
                     _instructionNotifyingEvent.Set();
-                    _instructionHoldingEvent.WaitOne();
+                    _instructionHoldingEvent.Wait(ct);
                     throw e;
                 };
             _argumentSuccessful = new object();
@@ -77,10 +77,10 @@ namespace Parallel.Worker.Test
         {
             Future<object> future = _executor.Execute(_identityBlocking, _argumentSuccessful);
             //wait for executor to be in middle of instruction
-            _instructionNotifyingEvent.WaitOne();
+            _instructionNotifyingEvent.Wait();
             future.Cancel();
-            //let instruction continue
-            _instructionHoldingEvent.Set();
+            //wait for cancel to be processed
+            future.Wait();
             Assert.That(future.IsCanceled, Is.True);
         }
 
@@ -89,10 +89,10 @@ namespace Parallel.Worker.Test
         {
             Future<object> future = _executor.Execute(_throwBlocking, _argumentFailure);
             //wait for executor to be in middle of instruction
-            _instructionNotifyingEvent.WaitOne();
+            _instructionNotifyingEvent.Wait();
             future.Cancel();
-            //let instruction continue
-            _instructionHoldingEvent.Set();
+            //wait for cancel to be processed
+            future.Wait();
             Assert.That(future.IsCanceled, Is.True);
         }
         #endregion
@@ -103,12 +103,15 @@ namespace Parallel.Worker.Test
         {
             var future1 = _executor.Execute(_identityBlocking, _argumentSuccessful);
             var future2 = _executor.Execute(_identityBlocking, _argumentSuccessful);
-            _instructionNotifyingEvent.WaitOne();
+            _instructionNotifyingEvent.Wait();
 
             Assert.That(future1.IsDone, Is.False);
             Assert.That(future2.IsDone, Is.False);
 
-            Future<object>.CancelAll(new[] { future1, future2 });
+            var futures = new[] {future1, future2};
+            Future<object>.CancelAll(futures);
+            //wait for cancel to be processed
+            Future<object>.WaitAll(futures);
 
             Assert.That(future1.IsCompleted, Is.True);
             Assert.That(future2.IsCompleted, Is.True);

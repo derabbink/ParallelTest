@@ -19,8 +19,8 @@ namespace Parallel.Worker.Test
         private object _argumentSuccessful;
         private Func<CancellationToken, Exception, object> _throw;
         private Func<CancellationToken, object, object> _identityBlocking;
-        private ManualResetEvent _instructionHoldingEvent;
-        private ManualResetEvent _instructionNotifyingEvent;
+        private ManualResetEventSlim _instructionHoldingEvent;
+        private ManualResetEventSlim _instructionNotifyingEvent;
         private Exception _argumentFailure;
 
         #region setup
@@ -31,12 +31,12 @@ namespace Parallel.Worker.Test
             _successExecutor = new TaskExecutor<object, object>();
             _failureExecutor = new TaskExecutor<Exception, object>();
             _identity = (_, a) => a;
-            _instructionNotifyingEvent = new ManualResetEvent(false);
-            _instructionHoldingEvent = new ManualResetEvent(false);
-            _identityBlocking = (_, a) =>
+            _instructionNotifyingEvent = new ManualResetEventSlim(false);
+            _instructionHoldingEvent = new ManualResetEventSlim(false);
+            _identityBlocking = (ct, a) =>
                 {
                     _instructionNotifyingEvent.Set();
-                    _instructionHoldingEvent.WaitOne();
+                    _instructionHoldingEvent.Wait(ct);
                     return a;
                 };
             _argumentSuccessful = new object();
@@ -84,7 +84,7 @@ namespace Parallel.Worker.Test
             var future = _failureExecutor.Execute(_throw, _argumentFailure);
             future.Wait();
             Assert.That(future.IsFaulted, Is.True);
-            Assert.That(future.Result, Is.SameAs(expected));
+            Assert.That(future.Exception.InnerException, Is.SameAs(expected));
         }
 
         #region multiple parallel tests
@@ -94,7 +94,7 @@ namespace Parallel.Worker.Test
             var expected = _argumentSuccessful;
             var future1 = _successExecutor.Execute(_identityBlocking, _argumentSuccessful);
             var future2 = _successExecutor.Execute(_identityBlocking, _argumentSuccessful);
-            _instructionNotifyingEvent.WaitOne();
+            _instructionNotifyingEvent.Wait();
 
             Assert.That(future1.IsDone, Is.False);
             Assert.That(future2.IsDone, Is.False);

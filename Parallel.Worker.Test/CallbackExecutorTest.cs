@@ -18,7 +18,7 @@ namespace Parallel.Worker.Test
         private object _argumentSuccessful;
         private Action<CancellationToken, Exception, Action<object>> _throw;
         private Action<CancellationToken, object, Action<object>> _identityBlocking;
-        private ManualResetEvent _instructionBlockingResetEvent;
+        private ManualResetEventSlim _instructionBlockingResetEvent;
         private Exception _argumentFailure;
 
         #region setup
@@ -28,10 +28,10 @@ namespace Parallel.Worker.Test
         {
             _executor = new TaskExecutor();
             _identity = (_, arg, callback) => callback(arg);
-            _instructionBlockingResetEvent = new ManualResetEvent(false);
-            _identityBlocking = (_, arg, callback) =>
+            _instructionBlockingResetEvent = new ManualResetEventSlim(false);
+            _identityBlocking = (ct, arg, callback) =>
                 {
-                    _instructionBlockingResetEvent.WaitOne();
+                    _instructionBlockingResetEvent.Wait(ct);
                     callback(arg);
                 };
             _argumentSuccessful = new object();
