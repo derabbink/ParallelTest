@@ -61,6 +61,13 @@ namespace Parallel.Worker.Interface
         }
         #endregion
 
+        /// <summary>
+        /// Returns true if IsCompleted or IsFaulted
+        /// </summary>
+        public bool IsDone {
+            get { return IsCompleted || IsFaulted; }
+        }
+
         public void Cancel()
         {
             _cancellationTokenSource.Cancel();
@@ -130,9 +137,17 @@ namespace Parallel.Worker.Interface
         }
         #endregion
 
+        /// <summary>
+        /// Returns true if IsCompleted or IsFaulted
+        /// </summary>
+        public bool IsDone
+        {
+            get { return IsCompleted || IsFaulted; }
+        }
+
         public void Cancel()
         {
-            _cancellationTokenSource.Cancel();
+            _cancellationTokenSource.Cancel(true);
         }
 
         public static void CancelAll(IEnumerable<Future<TResult>> futures)

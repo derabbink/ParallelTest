@@ -41,7 +41,7 @@ namespace Parallel.Worker.Test
         {
             var future = _successExecutor.Execute(_identity, _argumentSuccessful);
             //no wait
-            Assert.That(future.Status, Is.EqualTo(TaskStatus.RanToCompletion));
+            Assert.That(future.IsCompleted, Is.True);
         }
 
         [Test]
@@ -50,7 +50,7 @@ namespace Parallel.Worker.Test
             var expected = _argumentSuccessful;
             var future = _successExecutor.Execute(_identity, _argumentSuccessful);
             future.Wait();
-            Assert.That(future.Status, Is.EqualTo(TaskStatus.RanToCompletion));
+            Assert.That(future.IsCompleted, Is.True);
             Assert.That(future.Result.State, Is.EqualTo(SafeInstructionResult.ResultState.Succeeded));
             Assert.That(future.Result.Value, Is.SameAs(expected));
         }
@@ -61,7 +61,7 @@ namespace Parallel.Worker.Test
             var expected = _argumentFailure;
             var future = _failureExecutor.Execute(_throw, _argumentFailure);
             future.Wait();
-            Assert.That(future.Status, Is.EqualTo(TaskStatus.RanToCompletion));
+            Assert.That(future.IsCompleted, Is.True);
             Assert.That(future.Result.State, Is.EqualTo(SafeInstructionResult.ResultState.Failed));
             Assert.That(future.Result.Exception, Is.SameAs(expected));
         }

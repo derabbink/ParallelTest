@@ -60,7 +60,7 @@ namespace Parallel.Worker.Test
             Future<SafeInstructionResult<object>> future = _executor.Execute(_identity, _argumentSuccessful);
             future.Wait();
             future.Cancel();
-            Assert.That(future.Status, Is.EqualTo(TaskStatus.RanToCompletion));
+            Assert.That(future.IsCompleted, Is.True);
         }
 
         [Test]
@@ -69,7 +69,7 @@ namespace Parallel.Worker.Test
             Future<SafeInstructionResult<object>> future = _executor.Execute(_throw, _argumentFailure);
             future.Wait();
             future.Cancel();
-            Assert.That(future.Status, Is.EqualTo(TaskStatus.RanToCompletion));
+            Assert.That(future.IsCompleted, Is.True);
         }
 
         [Test]
@@ -81,7 +81,7 @@ namespace Parallel.Worker.Test
             future.Cancel();
             //let instruction continue
             _instructionHoldingEvent.Set();
-            Assert.That(future.Status, Is.EqualTo(TaskStatus.Canceled));
+            Assert.That(future.IsCanceled, Is.True);
         }
 
         [Test]
@@ -93,7 +93,7 @@ namespace Parallel.Worker.Test
             future.Cancel();
             //let instruction continue
             _instructionHoldingEvent.Set();
-            Assert.That(future.Status, Is.EqualTo(TaskStatus.Canceled));
+            Assert.That(future.IsCanceled, Is.True);
         }
         #endregion
 
@@ -105,13 +105,13 @@ namespace Parallel.Worker.Test
             var future2 = _executor.Execute(_identityBlocking, _argumentSuccessful);
             _instructionNotifyingEvent.WaitOne();
 
-            Assert.That(future1.Status, Is.Not.EqualTo(TaskStatus.RanToCompletion).And.Not.EqualTo(TaskStatus.Faulted).And.Not.EqualTo(TaskStatus.Canceled));
-            Assert.That(future1.Status, Is.Not.EqualTo(TaskStatus.RanToCompletion).And.Not.EqualTo(TaskStatus.Faulted).And.Not.EqualTo(TaskStatus.Canceled));
+            Assert.That(future1.IsDone, Is.False);
+            Assert.That(future2.IsDone, Is.False);
 
             Future<SafeInstructionResult<object>>.CancelAll(new[] { future1, future2 });
 
-            Assert.That(future1.Status, Is.EqualTo(TaskStatus.RanToCompletion));
-            Assert.That(future2.Status, Is.EqualTo(TaskStatus.RanToCompletion));
+            Assert.That(future1.IsCompleted, Is.True);
+            Assert.That(future2.IsCompleted, Is.True);
         }
         #endregion
 

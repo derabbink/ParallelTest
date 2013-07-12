@@ -44,7 +44,7 @@ namespace Parallel.Worker.Test
             Future<SafeInstructionResult<object>> future = _executorSuccessful.Execute(_identity, _argumentSuccessful);
             //future.Wait() not required
             future.Cancel();
-            Assert.That(future.Status, Is.EqualTo(TaskStatus.RanToCompletion));
+            Assert.That(future.IsCompleted, Is.True);
         }
 
         [Test]
@@ -53,7 +53,7 @@ namespace Parallel.Worker.Test
             Future<SafeInstructionResult<object>> future = _executorFailure.Execute(_throw, _argumentFailure);
             //future.Wait() not required
             future.Cancel();
-            Assert.That(future.Status, Is.EqualTo(TaskStatus.RanToCompletion));
+            Assert.That(future.IsCompleted, Is.True);
         }
         #endregion
 
