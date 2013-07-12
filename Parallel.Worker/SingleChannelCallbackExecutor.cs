@@ -6,6 +6,7 @@ using System.Threading;
 using Parallel.Worker.Communication.SingleChannelCallback;
 using Parallel.Worker.Interface;
 using Parallel.Worker.Interface.Communication.SingleChannelCallback;
+using Parallel.Worker.Interface.Events.SingleChannelCallback;
 using Parallel.Worker.Interface.Instruction;
 
 namespace Parallel.Worker
@@ -30,9 +31,67 @@ namespace Parallel.Worker
             _server = server;
         }
 
-        protected override SafeInstruction<TArgument, TResult> CreateSafeInstruction(Func<TArgument, TResult> instruction, TArgument argument)
+        protected override Func<CancellationToken, TResult> ApplyArgument(
+                Func<CancellationToken, TArgument, TResult> instruction,
+                TArgument argument)
         {
-            return new SingleChannelCallbackInstruction<TArgument, TResult>(instruction, argument, _server, _client);
+            Func<CancellationToken, TResult> wrapped = ct =>
+                {
+                    bool canceled = false;
+                    Future<TResult> wrappedResult = null;
+                    ManualResetEvent resultBlock = new ManualResetEvent(false);
+
+                    Action<Future<TResult>> resultCallback = result =>
+                        {
+                            //result should be a future that IsDone
+                            wrappedResult = result;
+                            resultBlock.Set();
+                        };
+                    Action cancellationCallback = () =>
+                        {
+                            canceled = true;
+                            resultBlock.Set();
+                        };
+                    Guid operationId = SetupCallbackListeners(_client, resultCallback, cancellationCallback);
+                    ct.Register(() => _server.Cancel(operationId));
+                    _server.Run(operationId, instruction, argument, _client);
+
+                    resultBlock.WaitOne();
+                    if (canceled)
+                        return null;
+                    else
+                        //unwrap (possible exception) in caller thread, so event-raiser's exception catcher does not interfere
+                        return wrappedResult.Unwrap();
+                };
+            return wrapped;
+        }
+
+        private static Guid SetupCallbackListeners(IClient<TResult> callbackChannel, Action<Future<TResult>> resultCallback, Action cancelCallback)
+        {
+            Guid operationId = new Guid();
+            EventHandler<CallbackEventArgs<TResult>> callbackListener = null;
+            EventHandler<CancelEventArgs> cancellationListener = null;
+            callbackListener = (sender, args) =>
+                {
+                    if (args.OperationId == operationId)
+                    {
+                        callbackChannel.UnsubscribeCallbackEvent(callbackListener);
+                        callbackChannel.UnsubscribeCancellationEvent(cancellationListener);
+                        resultCallback(args.Result);
+                    }
+                };
+            cancellationListener = (sender, args) =>
+                {
+                    if (args.OperationId == operationId)
+                    {
+                        callbackChannel.UnsubscribeCallbackEvent(callbackListener);
+                        callbackChannel.UnsubscribeCancellationEvent(cancellationListener);
+                        cancelCallback();
+                    }
+                };
+            callbackChannel.SubscribeCallbackEvent(callbackListener);
+            callbackChannel.SubscribeCancellationEvent(cancellationListener);
+            return operationId;
         }
     }
 }

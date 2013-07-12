@@ -10,10 +10,14 @@ namespace Parallel.Worker.Interface.Communication.SingleChannelCallback
     public interface IClient<TResult>
         where TResult : class
     {
-        void DoCallback(Guid operationId, SafeInstructionResult<TResult> result);
+        void DoCallback(Guid operationId, Future<TResult> result);
+
+        void ConfirmCancellation(Guid operationId);
 
         void SubscribeCallbackEvent(EventHandler<CallbackEventArgs<TResult>> handler);
-
         void UnsubscribeCallbackEvent(EventHandler<CallbackEventArgs<TResult>> handler);
+
+        void SubscribeCancellationEvent(EventHandler<CancelEventArgs> handler);
+        void UnsubscribeCancellationEvent(EventHandler<CancelEventArgs> handler);
     }
 }

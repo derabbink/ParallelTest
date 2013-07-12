@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using NUnit.Framework;
 using Parallel.Worker.Interface.Instruction;
 
@@ -10,6 +11,18 @@ namespace Parallel.Worker.Interface.Test.Instruction
     [TestFixture]
     public class WrapperTest
     {
+        private CancellationTokenSource _cancellationTokenSource;
+
+        #region setup
+
+        [SetUp]
+        public void Setup()
+        {
+            _cancellationTokenSource = new CancellationTokenSource();
+        }
+
+        #endregion
+
         #region tests
 
         [Test]
@@ -17,9 +30,9 @@ namespace Parallel.Worker.Interface.Test.Instruction
         {
             object arg = null;
             object expected = new object();
-            Func<object> testable = () => expected;
+            Func<CancellationToken, object> testable = _ => expected;
             var wrapped = Wrapper.Wrap(testable);
-            var actual = wrapped(arg);
+            var actual = wrapped(_cancellationTokenSource.Token, arg);
             Assert.That(actual, Is.SameAs(expected));
         }
 
@@ -28,9 +41,9 @@ namespace Parallel.Worker.Interface.Test.Instruction
         {
             object actual = null;
             object expected = new object();
-            Action<object> testable = o => actual = o;
+            Action<CancellationToken, object> testable = (_, o) => actual = o;
             var wrapped = Wrapper.Wrap(testable);
-            wrapped(expected);
+            wrapped(_cancellationTokenSource.Token, expected);
             Assert.That(actual, Is.SameAs(expected));
         }
 
@@ -40,9 +53,9 @@ namespace Parallel.Worker.Interface.Test.Instruction
             object arg = null;
             object actual = null;
             object expected = new object();
-            Action testable = () => actual = expected;
+            Action<CancellationToken> testable = _ => actual = expected;
             var wrapped = Wrapper.Wrap(testable);
-            wrapped(arg);
+            wrapped(_cancellationTokenSource.Token, arg);
             Assert.That(actual, Is.SameAs(expected));
         }
 

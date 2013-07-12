@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Parallel.Coordinator.Interface.Exceptions;
+using Parallel.Worker.Interface;
 using Parallel.Worker.Interface.Instruction;
 
 namespace Parallel.Coordinator.Interface.Instruction
@@ -15,7 +16,7 @@ namespace Parallel.Coordinator.Interface.Instruction
             Cancelled,
         }
 
-        protected CoordinatedInstructionResult(ResultState state, SafeInstructionResult result,
+        protected CoordinatedInstructionResult(ResultState state, Future result,
                                                CancellationException exception)
         {
             State = state;
@@ -23,7 +24,7 @@ namespace Parallel.Coordinator.Interface.Instruction
             Exception = exception;
         }
 
-        public static CoordinatedInstructionResult Completed(SafeInstructionResult result)
+        public static CoordinatedInstructionResult Completed(Future result)
         {
             return new CoordinatedInstructionResult(ResultState.Completed, result, null);
         }
@@ -35,30 +36,36 @@ namespace Parallel.Coordinator.Interface.Instruction
 
         public ResultState State { get; private set; }
 
-        public SafeInstructionResult Result { get; protected set; }
+        public Future Result { get; protected set; }
 
         public CancellationException Exception { get; private set; }
     }
 
-    public class CoordinatedInstructionResult<TResult> : CoordinatedInstructionResult
+    public class CoordinatedInstructionResult<TResult>
         where TResult : class
     {
-        protected CoordinatedInstructionResult(ResultState state, SafeInstructionResult result,
-                                               CancellationException exception) : base(state, result, exception) {}
-
-        public static CoordinatedInstructionResult<TResult> Completed(SafeInstructionResult<TResult> result)
+        protected CoordinatedInstructionResult(CoordinatedInstructionResult.ResultState state, Future<TResult> result,
+                                               CancellationException exception)
         {
-            return new CoordinatedInstructionResult<TResult>(ResultState.Completed, result, null);
+            State = state;
+            Result = result;
+            Exception = exception;
+        }
+
+        public static CoordinatedInstructionResult<TResult> Completed(Future<TResult> result)
+        {
+            return new CoordinatedInstructionResult<TResult>(CoordinatedInstructionResult.ResultState.Completed, result, null);
         }
 
         public new static CoordinatedInstructionResult<TResult> Cancelled(CancellationException exception)
         {
-            return new CoordinatedInstructionResult<TResult>(ResultState.Cancelled, null, exception);
+            return new CoordinatedInstructionResult<TResult>(CoordinatedInstructionResult.ResultState.Cancelled, null, exception);
         }
 
-        public new SafeInstructionResult<TResult> Result {
-            get { return base.Result as SafeInstructionResult<TResult>; }
-            protected set { base.Result = value; }
-        }
+        public CoordinatedInstructionResult.ResultState State { get; private set; }
+
+        public new Future<TResult> Result { get; protected set; }
+
+        public CancellationException Exception { get; private set; }
     }
 }

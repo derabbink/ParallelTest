@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -40,24 +41,28 @@ namespace Parallel.Worker.Interface
         #endregion
 
         #region factory methods
-        public static Future Create(Action action)
+        public static Future Create(Action<CancellationToken> action)
         {
-            return new Future(action, new CancellationTokenSource());
+            var cts = new CancellationTokenSource();
+            return new Future(() => action(cts.Token), cts);
         }
 
-        public static Future Create(Action action, TaskCreationOptions creationOptions)
+        public static Future Create(Action<CancellationToken> action, TaskCreationOptions creationOptions)
         {
-            return new Future(action, new CancellationTokenSource(), creationOptions);
+            var cts = new CancellationTokenSource();
+            return new Future(() => action(cts.Token), cts, creationOptions);
         }
 
-        public static Future Create(Action<object> action, object state)
+        public static Future Create(Action<CancellationToken, object> action, object state)
         {
-            return new Future(action, state, new CancellationTokenSource());
+            var cts = new CancellationTokenSource();
+            return new Future(s => action(cts.Token, s), state, cts);
         }
 
-        public static Future Create(Action<object> action, object state, TaskCreationOptions creationOptions)
+        public static Future Create(Action<CancellationToken, object> action, object state, TaskCreationOptions creationOptions)
         {
-            return new Future(action, state, new CancellationTokenSource(), creationOptions);
+            var cts = new CancellationTokenSource();
+            return new Future(s => action(cts.Token, s), state, cts, creationOptions);
         }
         #endregion
 
@@ -66,6 +71,18 @@ namespace Parallel.Worker.Interface
         /// </summary>
         public bool IsDone {
             get { return IsCompleted || IsFaulted; }
+        }
+
+        /// <summary>
+        /// never throws
+        /// </summary>
+        public new void Wait()
+        {
+            try
+            {
+                base.Wait();
+            }
+            catch {}
         }
 
         public void Cancel()
@@ -78,6 +95,17 @@ namespace Parallel.Worker.Interface
             foreach (Future f in futures)
             {
                 f.Cancel();
+            }
+        }
+
+        public void Unwrap()
+        {
+            if (IsFaulted)
+            {
+                if (Exception != null)
+                    throw Exception;
+                else
+                    throw new Exception("State was Faulted, without an Exception");
             }
         }
     }
@@ -116,24 +144,28 @@ namespace Parallel.Worker.Interface
         #endregion
 
         #region factory methods
-        public static Future<TResult> Create(Func<TResult> function)
+        public static Future<TResult> Create(Func<CancellationToken, TResult> function)
         {
-            return new Future<TResult>(function, new CancellationTokenSource());
+            var cts = new CancellationTokenSource();
+            return new Future<TResult>(() => function(cts.Token), cts);
         }
 
-        public static Future<TResult> Create(Func<TResult> function, TaskCreationOptions creationOptions)
+        public static Future<TResult> Create(Func<CancellationToken, TResult> function, TaskCreationOptions creationOptions)
         {
-            return new Future<TResult>(function, new CancellationTokenSource(), creationOptions);
+            var cts = new CancellationTokenSource();
+            return new Future<TResult>(() => function(cts.Token), cts, creationOptions);
         }
 
-        public static Future<TResult> Create(Func<object, TResult> function, object state)
+        public static Future<TResult> Create(Func<CancellationToken, object, TResult> function, object state)
         {
-            return new Future<TResult>(function, state, new CancellationTokenSource());
+            var cts = new CancellationTokenSource();
+            return new Future<TResult>(s => function(cts.Token, s), state, cts);
         }
 
-        public static Future<TResult> Create(Func<object, TResult> function, object state, TaskCreationOptions creationOptions)
+        public static Future<TResult> Create(Func<CancellationToken, object, TResult> function, object state, TaskCreationOptions creationOptions)
         {
-            return new Future<TResult>(function, state, new CancellationTokenSource(), creationOptions);
+            var cts = new CancellationTokenSource();
+            return new Future<TResult>(s => function(cts.Token, s), state, cts, creationOptions);
         }
         #endregion
 
@@ -145,9 +177,21 @@ namespace Parallel.Worker.Interface
             get { return IsCompleted || IsFaulted; }
         }
 
+        /// <summary>
+        /// never throws
+        /// </summary>
+        public new void Wait()
+        {
+            try
+            {
+                base.Wait();
+            }
+            catch { }
+        }
+
         public void Cancel()
         {
-            _cancellationTokenSource.Cancel(true);
+            _cancellationTokenSource.Cancel();
         }
 
         public static void CancelAll(IEnumerable<Future<TResult>> futures)
@@ -156,6 +200,24 @@ namespace Parallel.Worker.Interface
             {
                 f.Cancel();
             }
+        }
+
+        public TResult Unwrap()
+        {
+            Contract.Requires(IsDone, "State must be Faulted or RanToCompletion");
+
+            if (IsFaulted)
+            {
+                if (Exception != null)
+                    throw Exception;
+                else
+                    throw new Exception("State was Faulted, without an Exception");
+            }
+            else if (IsCompleted)
+                return Result;
+
+            //compiler does not see this as dead code
+            throw new Exception("State must be Faulted or RanToCompletion");
         }
     }
 }

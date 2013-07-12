@@ -30,7 +30,7 @@ namespace Parallel.Worker
         /// completes a future in a new task
         /// </summary>
         /// <param name="future"></param>
-        protected override void CompleteFuture(Future<SafeInstructionResult<TResult>> future)
+        protected override void CompleteFuture(Future<TResult> future)
         {
             TaskExecutor.CompleteFutureGeneric(future);
         }

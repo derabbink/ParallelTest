@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using NUnit.Framework;
 using Parallel.Worker.Communication.SingleChannelCallback;
+using Parallel.Worker.Interface;
 using Parallel.Worker.Interface.Events.SingleChannelCallback;
 using Parallel.Worker.Interface.Instruction;
 
@@ -16,10 +17,10 @@ namespace Parallel.Worker.Test.Communication.SingleChannelCallback
         private Channel<object, object> _channelSuccess;
         private Channel<Exception, object> _channelFail;
         private Guid _operationId;
-        private Func<object, object> _identity;
-        private Func<Exception, object> _throw;
+        private Func<CancellationToken, object, object> _identity;
+        private Func<CancellationToken, Exception, object> _throw;
         private ManualResetEvent _callbackCompleted;
-        private SafeInstructionResult<object> _operationResult;
+        private Future<object> _operationResult;
         private EventHandler<CallbackEventArgs<object>> _callbackHandler;
 
         #region setup
@@ -30,8 +31,8 @@ namespace Parallel.Worker.Test.Communication.SingleChannelCallback
             _channelSuccess = new Channel<object, object>();
             _channelFail = new Channel<Exception, object>();
             _operationId = new Guid();
-            _identity = a => a;
-            _throw = e => { throw e; };
+            _identity = (_, a) => a;
+            _throw = (_, e) => { throw e; };
             _callbackCompleted = new ManualResetEvent(false);
             _operationResult = null;
             _callbackHandler = (sender, args) =>
@@ -55,20 +56,20 @@ namespace Parallel.Worker.Test.Communication.SingleChannelCallback
         public void RunSuccessful()
         {
             var argument = new object();
-            _channelSuccess.Run(_operationId, new SafeInstruction<object, object>(_identity, argument), _channelSuccess);
+            _channelSuccess.Run(_operationId, _identity, argument, _channelSuccess);
             _callbackCompleted.WaitOne();
-            Assert.That(_operationResult.State, Is.EqualTo(SafeInstructionResult.ResultState.Succeeded));
-            Assert.That(_operationResult.Value, Is.SameAs(argument));
+            Assert.That(_operationResult.IsCompleted, Is.True);
+            Assert.That(_operationResult.Result, Is.SameAs(argument));
         }
 
         [Test]
         public void RunFailure()
         {
             var expectedException = new Exception("Expected");
-            _channelFail.Run(_operationId, new SafeInstruction<Exception, object>(_throw, expectedException), _channelFail);
+            _channelFail.Run(_operationId, _throw, expectedException, _channelFail);
             _callbackCompleted.WaitOne();
-            Assert.That(_operationResult.State, Is.EqualTo(SafeInstructionResult.ResultState.Failed));
-            Assert.That(_operationResult.Exception, Is.SameAs(expectedException));
+            Assert.That(_operationResult.IsFaulted, Is.True);
+            Assert.That(_operationResult.Exception.InnerException, Is.SameAs(expectedException));
         }
 
         #endregion

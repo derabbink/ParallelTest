@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using Parallel.Worker.Interface;
 using Parallel.Worker.Interface.Instruction;
 
@@ -22,39 +23,43 @@ namespace Parallel.Worker
         /// <param name="instruction"></param>
         /// <param name="argument"></param>
         /// <returns></returns>
-        public Future<SafeInstructionResult<TResult>> Execute<TArgument, TResult>(Func<TArgument, TResult> instruction, TArgument argument)
+        public Future<TResult> Execute<TArgument, TResult>(Func<CancellationToken, TArgument, TResult> instruction, TArgument argument)
             where TArgument : class
             where TResult : class
         {
-            return ExecuteGeneric(instruction, argument, CreateSafeInstruction, CompleteFuture);
+            return ExecuteGeneric(instruction, argument, ApplyArgument, CompleteFuture);
         }
 
-        internal static Future<SafeInstructionResult<TResult>> ExecuteGeneric<TArgument, TResult>(
-                Func<TArgument, TResult> instruction,
+        internal static Future<TResult> ExecuteGeneric<TArgument, TResult>(
+                Func<CancellationToken, TArgument, TResult> instruction,
                 TArgument argument,
-                Func<Func<TArgument, TResult>, TArgument, SafeInstruction<TArgument, TResult>> createSafeInstruction,
-                Action<Future<SafeInstructionResult<TResult>>> completeFuture)
+                Func<Func<CancellationToken, TArgument, TResult>, TArgument, Func<CancellationToken, TResult>> applyArgument,
+                Action<Future<TResult>> completeFuture)
             where TArgument : class
             where TResult : class
         {
-            SafeInstruction<TArgument, TResult> safeInstruction = createSafeInstruction(instruction, argument);
-            Future<SafeInstructionResult<TResult>> future = Future<SafeInstructionResult<TResult>>.Create(safeInstruction.Invoke);
+            Func<CancellationToken, TResult> safeInstruction = ct => instruction(ct, argument);
+            Future<TResult> future = Future<TResult>.Create(safeInstruction);
             completeFuture(future);
             return future;
         }
 
-        protected virtual SafeInstruction<TArgument, TResult> CreateSafeInstruction<TArgument, TResult>(Func<TArgument, TResult> instruction, TArgument argument)
+        protected virtual Func<CancellationToken, TResult> ApplyArgument<TArgument, TResult>(
+                Func<CancellationToken, TArgument, TResult> instruction,
+                TArgument argument)
             where TArgument : class
             where TResult : class
         {
-            return CreateSafeInstructionGeneric(instruction, argument);
+            return ApplyArgumentGeneric(instruction, argument);
         }
 
-        internal static SafeInstruction<TArgument, TResult> CreateSafeInstructionGeneric<TArgument, TResult>(Func<TArgument, TResult> instruction, TArgument argument)
+        internal static Func<CancellationToken, TResult> ApplyArgumentGeneric<TArgument, TResult>(
+                Func<CancellationToken, TArgument, TResult> instruction,
+                TArgument argument)
             where TArgument : class
             where TResult : class
         {
-            return new SafeInstruction<TArgument, TResult>(instruction, argument);
+            return ct => instruction(ct, argument);
         }
 
         /// <summary>
@@ -62,7 +67,7 @@ namespace Parallel.Worker
         /// </summary>
         /// <typeparam name="TResult"></typeparam>
         /// <param name="future"></param>
-        protected virtual void CompleteFuture<TResult>(Future<SafeInstructionResult<TResult>> future)
+        protected virtual void CompleteFuture<TResult>(Future<TResult> future)
             where TResult : class
         {
             CompleteFutureGeneric(future);
@@ -73,7 +78,7 @@ namespace Parallel.Worker
         /// </summary>
         /// <typeparam name="TResult"></typeparam>
         /// <param name="future"></param>
-        internal static void CompleteFutureGeneric<TResult>(Future<SafeInstructionResult<TResult>> future)
+        internal static void CompleteFutureGeneric<TResult>(Future<TResult> future)
             where TResult : class
         {
             future.RunSynchronously();
@@ -96,17 +101,19 @@ namespace Parallel.Worker
         /// <param name="instruction"></param>
         /// <param name="argument"></param>
         /// <returns></returns>
-        public Future<SafeInstructionResult<TResult>> Execute(Func<TArgument, TResult> instruction, TArgument argument)
+        public Future<TResult> Execute(Func<CancellationToken, TArgument, TResult> instruction, TArgument argument)
         {
-            return Executor.ExecuteGeneric(instruction, argument, CreateSafeInstruction, CompleteFuture);
+            return Executor.ExecuteGeneric(instruction, argument, ApplyArgument, CompleteFuture);
         }
 
-        protected virtual SafeInstruction<TArgument, TResult> CreateSafeInstruction(Func<TArgument, TResult> instruction, TArgument argument)
+        protected virtual Func<CancellationToken, TResult> ApplyArgument(
+                Func<CancellationToken, TArgument, TResult> instruction,
+                TArgument argument)
         {
-            return Executor.CreateSafeInstructionGeneric(instruction, argument);
+            return Executor.ApplyArgumentGeneric(instruction, argument);
         }
 
-        protected virtual void CompleteFuture(Future<SafeInstructionResult<TResult>> future)
+        protected virtual void CompleteFuture(Future<TResult> future)
         {
             Executor.CompleteFutureGeneric(future);
         }

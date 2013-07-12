@@ -14,10 +14,10 @@ namespace Parallel.Worker.Test
     public class CallbackExecutorTest
     {
         private IExecutor _executor;
-        private Action<object, Action<object>> _identity;
+        private Action<CancellationToken, object, Action<object>> _identity;
         private object _argumentSuccessful;
-        private Action<Exception, Action<object>> _throw;
-        private Action<object, Action<object>> _identityBlocking;
+        private Action<CancellationToken, Exception, Action<object>> _throw;
+        private Action<CancellationToken, object, Action<object>> _identityBlocking;
         private ManualResetEvent _instructionBlockingResetEvent;
         private Exception _argumentFailure;
 
@@ -27,15 +27,15 @@ namespace Parallel.Worker.Test
         public void Setup()
         {
             _executor = new TaskExecutor();
-            _identity = (arg, callback) => callback(arg);
+            _identity = (_, arg, callback) => callback(arg);
             _instructionBlockingResetEvent = new ManualResetEvent(false);
-            _identityBlocking = (arg, callback) =>
+            _identityBlocking = (_, arg, callback) =>
                 {
                     _instructionBlockingResetEvent.WaitOne();
                     callback(arg);
                 };
             _argumentSuccessful = new object();
-            _throw = (e, _) => { throw e; };
+            _throw = (_, e, cb) => { throw e; };
             _argumentFailure = new Exception("Expected");
         }
 
@@ -69,8 +69,7 @@ namespace Parallel.Worker.Test
             var future = _executor.Execute(_identity, _argumentSuccessful);
             future.Wait();
             Assert.That(future.IsCompleted, Is.True);
-            Assert.That(future.Result.State, Is.EqualTo(SafeInstructionResult.ResultState.Succeeded));
-            Assert.That(future.Result.Value, Is.SameAs(expected));
+            Assert.That(future.Result, Is.SameAs(expected));
         }
 
         [Test]
@@ -79,9 +78,8 @@ namespace Parallel.Worker.Test
             var expected = _argumentFailure;
             var future = _executor.Execute(_throw, _argumentFailure);
             future.Wait();
-            Assert.That(future.IsCompleted, Is.True);
-            Assert.That(future.Result.State, Is.EqualTo(SafeInstructionResult.ResultState.Failed));
-            Assert.That(future.Result.Exception, Is.SameAs(expected));
+            Assert.That(future.IsFaulted, Is.True);
+            Assert.That(future.Exception.InnerException, Is.SameAs(expected));
         }
 
         #endregion

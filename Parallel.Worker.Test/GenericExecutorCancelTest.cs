@@ -15,8 +15,8 @@ namespace Parallel.Worker.Test
     {
         private Executor<object, object> _executorSuccessful;
         private Executor<Exception, object> _executorFailure;
-        private Func<object, object> _identity;
-        private Func<Exception, object> _throw;
+        private Func<CancellationToken, object, object> _identity;
+        private Func<CancellationToken, Exception, object> _throw;
         private object _argumentSuccessful;
         private Exception _argumentFailure;
 
@@ -27,8 +27,8 @@ namespace Parallel.Worker.Test
         {
             _executorSuccessful = new Executor<object, object>();
             _executorFailure = new Executor<Exception, object>();
-            _identity = a => a;
-            _throw = e => { throw e; };
+            _identity = (_, a) => a;
+            _throw = (_, e) => { throw e; };
             _argumentSuccessful = new object();
             _argumentFailure = new Exception("Expected");
         }
@@ -41,7 +41,7 @@ namespace Parallel.Worker.Test
         [Test]
         public void SequentialCancellationSuccessful()
         {
-            Future<SafeInstructionResult<object>> future = _executorSuccessful.Execute(_identity, _argumentSuccessful);
+            Future<object> future = _executorSuccessful.Execute(_identity, _argumentSuccessful);
             //future.Wait() not required
             future.Cancel();
             Assert.That(future.IsCompleted, Is.True);
@@ -50,7 +50,7 @@ namespace Parallel.Worker.Test
         [Test]
         public void SequentialCancellationFailure()
         {
-            Future<SafeInstructionResult<object>> future = _executorFailure.Execute(_throw, _argumentFailure);
+            Future<object> future = _executorFailure.Execute(_throw, _argumentFailure);
             //future.Wait() not required
             future.Cancel();
             Assert.That(future.IsCompleted, Is.True);

@@ -14,10 +14,10 @@ namespace Parallel.Worker.Test
     public class TaskExecutorCancelTest
     {
         private IExecutor _executor;
-        private Func<object, object> _identity;
-        private Func<object, object> _identityBlocking;
-        private Func<Exception, object> _throw;
-        private Func<Exception, object> _throwBlocking;
+        private Func<CancellationToken, object, object> _identity;
+        private Func<CancellationToken, object, object> _identityBlocking;
+        private Func<CancellationToken, Exception, object> _throw;
+        private Func<CancellationToken, Exception, object> _throwBlocking;
         private ManualResetEvent _instructionHoldingEvent;
         private ManualResetEvent _instructionNotifyingEvent;
         private object _argumentSuccessful;
@@ -31,15 +31,15 @@ namespace Parallel.Worker.Test
             _executor = new TaskExecutor();
             _instructionHoldingEvent = new ManualResetEvent(false);
             _instructionNotifyingEvent = new ManualResetEvent(false);
-            _identity = a => a;
-            _identityBlocking = a =>
+            _identity = (_, a) => a;
+            _identityBlocking = (_, a) =>
             {
                 _instructionNotifyingEvent.Set();
                 _instructionHoldingEvent.WaitOne();
                 return a;
             };
-            _throw = e => { throw e; };
-            _throwBlocking = e =>
+            _throw = (_, e) => { throw e; };
+            _throwBlocking = (_, e) =>
                 {
                     _instructionNotifyingEvent.Set();
                     _instructionHoldingEvent.WaitOne();
@@ -57,7 +57,7 @@ namespace Parallel.Worker.Test
         [Test]
         public void SequentialCancellationSuccessful()
         {
-            Future<SafeInstructionResult<object>> future = _executor.Execute(_identity, _argumentSuccessful);
+            Future<object> future = _executor.Execute(_identity, _argumentSuccessful);
             future.Wait();
             future.Cancel();
             Assert.That(future.IsCompleted, Is.True);
@@ -66,7 +66,7 @@ namespace Parallel.Worker.Test
         [Test]
         public void SequentialCancellationFailure()
         {
-            Future<SafeInstructionResult<object>> future = _executor.Execute(_throw, _argumentFailure);
+            Future<object> future = _executor.Execute(_throw, _argumentFailure);
             future.Wait();
             future.Cancel();
             Assert.That(future.IsCompleted, Is.True);
@@ -75,7 +75,7 @@ namespace Parallel.Worker.Test
         [Test]
         public void BlockingCancellationSuccessful()
         {
-            Future<SafeInstructionResult<object>> future = _executor.Execute(_identityBlocking, _argumentSuccessful);
+            Future<object> future = _executor.Execute(_identityBlocking, _argumentSuccessful);
             //wait for executor to be in middle of instruction
             _instructionNotifyingEvent.WaitOne();
             future.Cancel();
@@ -87,7 +87,7 @@ namespace Parallel.Worker.Test
         [Test]
         public void BlockingCancellationFailure()
         {
-            Future<SafeInstructionResult<object>> future = _executor.Execute(_throwBlocking, _argumentFailure);
+            Future<object> future = _executor.Execute(_throwBlocking, _argumentFailure);
             //wait for executor to be in middle of instruction
             _instructionNotifyingEvent.WaitOne();
             future.Cancel();
@@ -108,7 +108,7 @@ namespace Parallel.Worker.Test
             Assert.That(future1.IsDone, Is.False);
             Assert.That(future2.IsDone, Is.False);
 
-            Future<SafeInstructionResult<object>>.CancelAll(new[] { future1, future2 });
+            Future<object>.CancelAll(new[] { future1, future2 });
 
             Assert.That(future1.IsCompleted, Is.True);
             Assert.That(future2.IsCompleted, Is.True);

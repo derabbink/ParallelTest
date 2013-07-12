@@ -15,12 +15,12 @@ namespace Parallel.Worker
         /// </summary>
         /// <typeparam name="TResult"></typeparam>
         /// <param name="future"></param>
-        protected override void CompleteFuture<TResult>(Future<SafeInstructionResult<TResult>> future)
+        protected override void CompleteFuture<TResult>(Future<TResult> future)
         {
             CompleteFutureGeneric(future);
         }
 
-        internal new static void CompleteFutureGeneric<TResult>(Future<SafeInstructionResult<TResult>> future)
+        internal new static void CompleteFutureGeneric<TResult>(Future<TResult> future)
             where TResult : class
         {
             future.Start();
@@ -35,7 +35,7 @@ namespace Parallel.Worker
         /// completes a future in parallel
         /// </summary>
         /// <param name="future"></param>
-        protected override void CompleteFuture(Future<SafeInstructionResult<TResult>> future)
+        protected override void CompleteFuture(Future<TResult> future)
         {
             TaskExecutor.CompleteFutureGeneric(future);
         }

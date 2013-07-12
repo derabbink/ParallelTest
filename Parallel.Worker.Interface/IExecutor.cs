@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Parallel.Worker.Interface.Instruction;
 
@@ -9,7 +10,7 @@ namespace Parallel.Worker.Interface
 {
     public interface IExecutor
     {
-        Future<SafeInstructionResult<TResult>> Execute<TArgument, TResult>(Func<TArgument, TResult> instruction, TArgument argument)
+        Future<TResult> Execute<TArgument, TResult>(Func<CancellationToken, TArgument, TResult> instruction, TArgument argument)
             where TArgument : class
             where TResult : class;
     }
@@ -18,6 +19,6 @@ namespace Parallel.Worker.Interface
         where TArgument : class
         where TResult : class
     {
-        Future<SafeInstructionResult<TResult>> Execute(Func<TArgument, TResult> instruction, TArgument argument);
+        Future<TResult> Execute(Func<CancellationToken, TArgument, TResult> instruction, TArgument argument);
     }
 }
