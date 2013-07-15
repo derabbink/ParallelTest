@@ -43,7 +43,6 @@
     <Compile Include="Coordinator.cs" />
     <Compile Include="Exceptions\CancellationException.cs" />
     <Compile Include="Instruction\CoordinatedInstruction.cs" />
-    <Compile Include="Instruction\CoordinatedInstructionResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

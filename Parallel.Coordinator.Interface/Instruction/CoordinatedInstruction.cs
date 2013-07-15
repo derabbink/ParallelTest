@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Parallel.Worker.Interface;
 
@@ -17,33 +18,31 @@ namespace Parallel.Coordinator.Interface.Instruction
     {
         private IExecutor _executor;
         private IExecutor<TArgument, TResult> _executorGeneric;
-        private Func<TArgument, TResult> _instruction;
-        private TArgument _argument;
+        private Func<CancellationToken, TArgument, TResult> _instruction;
         private Task<TResult> _future;
 
-        public CoordinatedInstruction(IExecutor executor, Func<TArgument, TResult> instruction, TArgument argument)
+        public CoordinatedInstruction(IExecutor executor, Func<CancellationToken, TArgument, TResult> instruction)
         {
             _executor = executor;
             _executorGeneric = null;
             _instruction = instruction;
-            _argument = argument;
         }
 
-        public CoordinatedInstruction(IExecutor<TArgument, TResult> executor, Func<TArgument, TResult> instruction,
-                                      TArgument argument)
+        public CoordinatedInstruction(IExecutor<TArgument, TResult> executor, Func<CancellationToken, TArgument, TResult> instruction)
         {
             _executor = null;
             _executorGeneric = executor;
             _instruction = instruction;
-            _argument = argument;
         }
 
-        private bool Generic { get { return _executor == null; } }
+        private bool IsGeneric { get { return _executor == null; } }
 
-        public Task<CoordinatedInstructionResult<TResult>> Invoke()
+        public Future<TResult> Invoke(TArgument argument)
         {
-            //TODO
-            return null;
+            if (IsGeneric)
+                return _executorGeneric.Execute(_instruction, argument);
+            else
+                return _executor.Execute(_instruction, argument);
         }
     }
 }
