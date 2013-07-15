@@ -8,6 +8,9 @@ using Parallel.Worker.Interface.Events;
 
 namespace Parallel.Worker.Interface
 {
+    /// <summary>
+    /// Default implementation used only as a proxy object
+    /// </summary>
     public class Progress : IProgress
     {
         public event EventHandler<ProgressEventArgs> ProgressChanged;
@@ -18,6 +21,10 @@ namespace Parallel.Worker.Interface
         }
     }
 
+    /// <summary>
+    /// Default implementation used only as a proxy object
+    /// </summary>
+    /// <typeparam name="TValue"></typeparam>
     public class Progress<TValue> : Progress, IProgress<TValue>
         where TValue : class
     {

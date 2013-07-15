@@ -26,12 +26,12 @@ namespace Parallel.Worker.Communication.SingleChannelCallback
             _cancellationTokenSources = new ConcurrentDictionary<Guid, CancellationTokenSource>();
         }
 
-        public void Run(Guid operationId, Func<CancellationToken, TArgument, TResult> instruction, TArgument argument, IClient<TResult> callback)
+        public void Run(Guid operationId, Func<CancellationToken, IProgress, TArgument, TResult> instruction, TArgument argument, IClient<TResult> callback)
         {
             CancellationTokenSource cts = new CancellationTokenSource();
             _cancellationTokenSources.Add(operationId, cts);
 
-            Func<CancellationToken, TResult> applied = Executor.ApplyArgumentGeneric(instruction, argument);
+            Func<CancellationToken, IProgress, TResult> applied = Executor.ApplyArgumentGeneric(instruction, argument);
             Future<TResult> result = Future<TResult>.Create(applied);
             result.RunSynchronously();
             if (result.IsDone)

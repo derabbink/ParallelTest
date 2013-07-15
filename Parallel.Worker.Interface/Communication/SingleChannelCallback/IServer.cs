@@ -11,7 +11,7 @@ namespace Parallel.Worker.Interface.Communication.SingleChannelCallback
         where TArgument : class
         where TResult : class
     {
-        void Run(Guid operationId, Func<CancellationToken, TArgument, TResult> instruction, TArgument argument, IClient<TResult> callback);
+        void Run(Guid operationId, Func<CancellationToken, IProgress, TArgument, TResult> instruction, TArgument argument, IClient<TResult> callback);
 
         void Cancel(Guid operationId);
     }

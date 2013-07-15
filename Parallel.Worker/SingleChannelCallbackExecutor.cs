@@ -31,11 +31,11 @@ namespace Parallel.Worker
             _server = server;
         }
 
-        protected override Func<CancellationToken, TResult> ApplyArgument(
-                Func<CancellationToken, TArgument, TResult> instruction,
+        protected override Func<CancellationToken, IProgress, TResult> ApplyArgument(
+                Func<CancellationToken, IProgress, TArgument, TResult> instruction,
                 TArgument argument)
         {
-            Func<CancellationToken, TResult> wrapped = ct =>
+            Func<CancellationToken, IProgress, TResult> wrapped = (ct, p) =>
                 {
                     bool canceled = false;
                     Future<TResult> wrappedResult = null;
@@ -54,6 +54,7 @@ namespace Parallel.Worker
                         };
                     Guid operationId = SetupCallbackListeners(_client, resultCallback, cancellationCallback);
                     ct.Register(() => _server.Cancel(operationId));
+                    //TODO wrap layer around IProgress as well
                     _server.Run(operationId, instruction, argument, _client);
 
                     resultBlock.Wait();

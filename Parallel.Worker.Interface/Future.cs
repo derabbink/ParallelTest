@@ -16,14 +16,14 @@ namespace Parallel.Worker.Interface
         public event EventHandler<ProgressEventArgs> ProgressChanged;
 
         #region constructors
-        protected internal Future(Action action, CancellationTokenSource cancellationTokenSource, Progress progress)
+        protected Future(Action action, CancellationTokenSource cancellationTokenSource, Progress progress)
             : base(action, cancellationTokenSource.Token)
         {
             progress.ProgressChanged += (_, args) => OnProgress();
             _cancellationTokenSource = cancellationTokenSource;
         }
 
-        protected internal Future(Action action, CancellationTokenSource cancellationTokenSource, Progress progress,
+        protected Future(Action action, CancellationTokenSource cancellationTokenSource, Progress progress,
                                   TaskCreationOptions creationOptions)
             : base(action, cancellationTokenSource.Token, creationOptions)
         {
@@ -31,7 +31,7 @@ namespace Parallel.Worker.Interface
             _cancellationTokenSource = cancellationTokenSource;
         }
 
-        protected internal Future(Action<object> action, object state, CancellationTokenSource cancellationTokenSource,
+        protected Future(Action<object> action, object state, CancellationTokenSource cancellationTokenSource,
                                   Progress progress)
             : base(action, state, cancellationTokenSource.Token)
         {
@@ -39,7 +39,7 @@ namespace Parallel.Worker.Interface
             _cancellationTokenSource = cancellationTokenSource;
         }
 
-        protected internal Future(Action<object> action, object state, CancellationTokenSource cancellationTokenSource,
+        protected Future(Action<object> action, object state, CancellationTokenSource cancellationTokenSource,
                                   Progress progress,
                                   TaskCreationOptions creationOptions)
             : base(action, state, cancellationTokenSource.Token, creationOptions)
@@ -143,14 +143,14 @@ namespace Parallel.Worker.Interface
         public new event EventHandler<ProgressEventArgs<TProgress>> ProgressChanged;
 
         #region constructors
-        protected internal FutureProgress(Action action, CancellationTokenSource cancellationTokenSource,
+        protected FutureProgress(Action action, CancellationTokenSource cancellationTokenSource,
                                           Progress<TProgress> progress)
             : base(action, cancellationTokenSource, progress)
         {
             progress.ProgressChanged += (_, args) => OnProgress();
         }
 
-        protected internal FutureProgress(Action action, CancellationTokenSource cancellationTokenSource,
+        protected FutureProgress(Action action, CancellationTokenSource cancellationTokenSource,
                                           Progress<TProgress> progress,
                                           TaskCreationOptions creationOptions)
             : base(action, cancellationTokenSource, progress, creationOptions)
@@ -158,7 +158,7 @@ namespace Parallel.Worker.Interface
             progress.ProgressChanged += (_, args) => OnProgress();
         }
 
-        protected internal FutureProgress(Action<object> action, object state,
+        protected FutureProgress(Action<object> action, object state,
                                           CancellationTokenSource cancellationTokenSource,
                                           Progress<TProgress> progress)
             : base(action, state, cancellationTokenSource, progress)
@@ -166,7 +166,7 @@ namespace Parallel.Worker.Interface
             progress.ProgressChanged += (_, args) => OnProgress();
         }
 
-        protected internal FutureProgress(Action<object> action, object state,
+        protected FutureProgress(Action<object> action, object state,
                                           CancellationTokenSource cancellationTokenSource,
                                           Progress<TProgress> progress,
                                           TaskCreationOptions creationOptions)
@@ -177,32 +177,32 @@ namespace Parallel.Worker.Interface
         #endregion
 
         #region factory methods
-        public static Future Create(Action<CancellationToken, IProgress<TProgress>> action)
+        public static FutureProgress<TProgress> Create(Action<CancellationToken, IProgress<TProgress>> action)
         {
             var cts = new CancellationTokenSource();
             var progress = new Progress<TProgress>();
-            return new Future(() => action(cts.Token, progress), cts, progress);
+            return new FutureProgress<TProgress>(() => action(cts.Token, progress), cts, progress);
         }
 
-        public static Future Create(Action<CancellationToken, IProgress<TProgress>> action, TaskCreationOptions creationOptions)
+        public static FutureProgress<TProgress> Create(Action<CancellationToken, IProgress<TProgress>> action, TaskCreationOptions creationOptions)
         {
             var cts = new CancellationTokenSource();
             var progress = new Progress<TProgress>();
-            return new Future(() => action(cts.Token, progress), cts, progress, creationOptions);
+            return new FutureProgress<TProgress>(() => action(cts.Token, progress), cts, progress, creationOptions);
         }
 
-        public static Future Create(Action<CancellationToken, IProgress<TProgress>, object> action, object state)
+        public static FutureProgress<TProgress> Create(Action<CancellationToken, IProgress<TProgress>, object> action, object state)
         {
             var cts = new CancellationTokenSource();
             var progress = new Progress<TProgress>();
-            return new Future(s => action(cts.Token, progress, s), state, cts, progress);
+            return new FutureProgress<TProgress>(s => action(cts.Token, progress, s), state, cts, progress);
         }
 
-        public static Future Create(Action<CancellationToken, IProgress<TProgress>, object> action, object state, TaskCreationOptions creationOptions)
+        public static FutureProgress<TProgress> Create(Action<CancellationToken, IProgress<TProgress>, object> action, object state, TaskCreationOptions creationOptions)
         {
             var cts = new CancellationTokenSource();
             var progress = new Progress<TProgress>();
-            return new Future(s => action(cts.Token, progress, s), state, cts, progress, creationOptions);
+            return new FutureProgress<TProgress>(s => action(cts.Token, progress, s), state, cts, progress, creationOptions);
         }
         #endregion
 
@@ -219,7 +219,7 @@ namespace Parallel.Worker.Interface
         public event EventHandler<ProgressEventArgs> ProgressChanged;
 
         #region constructors
-        protected internal Future(Func<TResult> function, CancellationTokenSource cancellationTokenSource,
+        protected Future(Func<TResult> function, CancellationTokenSource cancellationTokenSource,
                                   Progress progress)
             : base(function, cancellationTokenSource.Token)
         {
@@ -227,7 +227,7 @@ namespace Parallel.Worker.Interface
             _cancellationTokenSource = cancellationTokenSource;
         }
 
-        protected internal Future(Func<TResult> function, CancellationTokenSource cancellationTokenSource,
+        protected Future(Func<TResult> function, CancellationTokenSource cancellationTokenSource,
                                   Progress progress,
                                   TaskCreationOptions creationOptions)
             : base(function, cancellationTokenSource.Token, creationOptions)
@@ -236,7 +236,7 @@ namespace Parallel.Worker.Interface
             _cancellationTokenSource = cancellationTokenSource;
         }
 
-        protected internal Future(Func<object, TResult> function, object state,
+        protected Future(Func<object, TResult> function, object state,
                                   CancellationTokenSource cancellationTokenSource, Progress progress)
             : base(function, state, cancellationTokenSource.Token)
         {
@@ -244,7 +244,7 @@ namespace Parallel.Worker.Interface
             _cancellationTokenSource = cancellationTokenSource;
         }
 
-        protected internal Future(Func<object, TResult> function, object state,
+        protected Future(Func<object, TResult> function, object state,
                                   CancellationTokenSource cancellationTokenSource, Progress progress,
                                   TaskCreationOptions creationOptions)
             : base(function, state, cancellationTokenSource.Token, creationOptions)
@@ -356,14 +356,14 @@ namespace Parallel.Worker.Interface
         public new event EventHandler<ProgressEventArgs<TProgress>> ProgressChanged;
 
         #region constructors
-        protected internal Future(Func<TResult> function, CancellationTokenSource cancellationTokenSource,
+        protected Future(Func<TResult> function, CancellationTokenSource cancellationTokenSource,
                                   Progress<TProgress> progress)
             : base(function, cancellationTokenSource, progress)
         {
             progress.ProgressChanged += (_, arg) => OnProgress(arg.Value);
         }
 
-        protected internal Future(Func<TResult> function, CancellationTokenSource cancellationTokenSource,
+        protected Future(Func<TResult> function, CancellationTokenSource cancellationTokenSource,
                                   Progress<TProgress> progress,
                                   TaskCreationOptions creationOptions)
             : base(function, cancellationTokenSource, progress, creationOptions)
@@ -371,14 +371,14 @@ namespace Parallel.Worker.Interface
             progress.ProgressChanged += (_, arg) => OnProgress(arg.Value);
         }
 
-        protected internal Future(Func<object, TResult> function, object state,
+        protected Future(Func<object, TResult> function, object state,
                                   CancellationTokenSource cancellationTokenSource, Progress<TProgress> progress)
             : base(function, state, cancellationTokenSource, progress)
         {
             progress.ProgressChanged += (_, arg) => OnProgress(arg.Value);
         }
 
-        protected internal Future(Func<object, TResult> function, object state,
+        protected Future(Func<object, TResult> function, object state,
                                   CancellationTokenSource cancellationTokenSource, Progress<TProgress> progress,
                                   TaskCreationOptions creationOptions)
             : base(function, state, cancellationTokenSource, progress, creationOptions)

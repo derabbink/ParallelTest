@@ -35,15 +35,15 @@ namespace Parallel.Coordinator.Interface.Instruction
 
         private IExecutor _executor;
         private IExecutor<TArgument, TResult> _executorGeneric;
-        private Func<CancellationToken, TArgument, TResult> _instruction;
+        private Func<CancellationToken, IProgress, TArgument, TResult> _instruction;
         private TimeSpan _timeout;
 
-        public CoordinatedInstruction(IExecutor executor, Func<CancellationToken, TArgument, TResult> instruction)
+        public CoordinatedInstruction(IExecutor executor, Func<CancellationToken, IProgress, TArgument, TResult> instruction)
             : this(executor, instruction, DefaultTimeout)
         {
         }
 
-        public CoordinatedInstruction(IExecutor executor, Func<CancellationToken, TArgument, TResult> instruction, TimeSpan timeout)
+        public CoordinatedInstruction(IExecutor executor, Func<CancellationToken, IProgress, TArgument, TResult> instruction, TimeSpan timeout)
         {
             _executor = executor;
             _executorGeneric = null;
@@ -51,7 +51,7 @@ namespace Parallel.Coordinator.Interface.Instruction
             _timeout = timeout;
         }
 
-        public CoordinatedInstruction(IExecutor<TArgument, TResult> executor, Func<CancellationToken, TArgument, TResult> instruction)
+        public CoordinatedInstruction(IExecutor<TArgument, TResult> executor, Func<CancellationToken, IProgress, TArgument, TResult> instruction)
         {
             _executor = null;
             _executorGeneric = executor;
