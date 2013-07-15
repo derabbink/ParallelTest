@@ -49,7 +49,20 @@ namespace Prallel.Coordinator.Interface.Test
         public void Do2ChainedOperations()
         {
             var expected = _identityArgument;
-            var coordinator = Parallel.Coordinator.Interface.Coordinator.Do(_identityInstr, _identityArgument).ThenDo(_unwrapInstr);
+            var coordinator = Parallel.Coordinator.Interface.Coordinator.Do(_identityInstr, _identityArgument)
+                .ThenDo(_unwrapInstr);
+            var actual = coordinator.Result;
+            Assert.That(actual.IsDone, Is.True);
+            Assert.That(actual.Result, Is.SameAs(expected));
+        }
+
+        [Test]
+        public void Do3ChainedOperations()
+        {
+            var expected = _identityArgument;
+            var coordinator = Parallel.Coordinator.Interface.Coordinator.Do(_identityInstr, _identityArgument)
+                .ThenDo(_unwrapInstr)
+                .ThenDo(_unwrapInstr);
             var actual = coordinator.Result;
             Assert.That(actual.IsDone, Is.True);
             Assert.That(actual.Result, Is.SameAs(expected));
