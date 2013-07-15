@@ -5,64 +5,77 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Parallel.Worker.Interface.Events;
 
 namespace Parallel.Worker.Interface
 {
-    public class Future : Task
+    public class Future : Task, IProgress
     {
         private readonly CancellationTokenSource _cancellationTokenSource;
 
+        public event EventHandler<ProgressEventArgs> ProgressChanged;
+
         #region constructors
-        private Future(Action action, CancellationTokenSource cancellationTokenSource)
+        protected internal Future(Action action, CancellationTokenSource cancellationTokenSource, Progress progress)
             : base(action, cancellationTokenSource.Token)
         {
+            progress.ProgressChanged += (_, args) => OnProgress();
             _cancellationTokenSource = cancellationTokenSource;
         }
 
-        private Future(Action action, CancellationTokenSource cancellationTokenSource,
-                       TaskCreationOptions creationOptions)
+        protected internal Future(Action action, CancellationTokenSource cancellationTokenSource, Progress progress,
+                                  TaskCreationOptions creationOptions)
             : base(action, cancellationTokenSource.Token, creationOptions)
         {
+            progress.ProgressChanged += (_, args) => OnProgress();
             _cancellationTokenSource = cancellationTokenSource;
         }
 
-        private Future(Action<object> action, object state, CancellationTokenSource cancellationTokenSource)
+        protected internal Future(Action<object> action, object state, CancellationTokenSource cancellationTokenSource,
+                                  Progress progress)
             : base(action, state, cancellationTokenSource.Token)
         {
+            progress.ProgressChanged += (_, args) => OnProgress();
             _cancellationTokenSource = cancellationTokenSource;
         }
 
-        private Future(Action<object> action, object state, CancellationTokenSource cancellationTokenSource,
-                       TaskCreationOptions creationOptions)
+        protected internal Future(Action<object> action, object state, CancellationTokenSource cancellationTokenSource,
+                                  Progress progress,
+                                  TaskCreationOptions creationOptions)
             : base(action, state, cancellationTokenSource.Token, creationOptions)
         {
+            progress.ProgressChanged += (_, args) => OnProgress();
             _cancellationTokenSource = cancellationTokenSource;
         }
         #endregion
 
         #region factory methods
-        public static Future Create(Action<CancellationToken> action)
+        public static Future Create(Action<CancellationToken, IProgress> action)
         {
             var cts = new CancellationTokenSource();
-            return new Future(() => action(cts.Token), cts);
+            var progress = new Progress();
+            return new Future(() => action(cts.Token, progress), cts, progress);
         }
 
-        public static Future Create(Action<CancellationToken> action, TaskCreationOptions creationOptions)
+        public static Future Create(Action<CancellationToken, IProgress> action, TaskCreationOptions creationOptions)
         {
             var cts = new CancellationTokenSource();
-            return new Future(() => action(cts.Token), cts, creationOptions);
+            var progress = new Progress();
+            return new Future(() => action(cts.Token, progress), cts, progress, creationOptions);
         }
 
-        public static Future Create(Action<CancellationToken, object> action, object state)
+        public static Future Create(Action<CancellationToken, IProgress, object> action, object state)
         {
             var cts = new CancellationTokenSource();
-            return new Future(s => action(cts.Token, s), state, cts);
+            var progress = new Progress();
+            return new Future(s => action(cts.Token, progress, s), state, cts, progress);
         }
 
-        public static Future Create(Action<CancellationToken, object> action, object state, TaskCreationOptions creationOptions)
+        public static Future Create(Action<CancellationToken, IProgress, object> action, object state, TaskCreationOptions creationOptions)
         {
             var cts = new CancellationTokenSource();
-            return new Future(s => action(cts.Token, s), state, cts, creationOptions);
+            var progress = new Progress();
+            return new Future(s => action(cts.Token, progress, s), state, cts, progress, creationOptions);
         }
         #endregion
 
@@ -74,7 +87,7 @@ namespace Parallel.Worker.Interface
         }
 
         /// <summary>
-        /// never throws
+        /// never throws errors from inner operation
         /// </summary>
         public new void Wait()
         {
@@ -112,64 +125,162 @@ namespace Parallel.Worker.Interface
                     throw new Exception("State was Faulted, without an Exception");
             }
         }
+
+        public void OnProgress()
+        {
+            ProgressChanged.Raise(this, new ProgressEventArgs());
+        }
     }
 
-    public class Future<TResult> : Task<TResult>
+    /// <summary>
+    /// Implementation for operations that report progress with a value (not just hearbeats).
+    /// Name must be different from `Future&lt;TProgress&gt;` since that clashes with `Future&lt;TResult&gt;`
+    /// </summary>
+    /// <typeparam name="TProgress"></typeparam>
+    public class FutureProgress<TProgress> : Future, IProgress<TProgress>
+        where TProgress : class
+    {
+        public new event EventHandler<ProgressEventArgs<TProgress>> ProgressChanged;
+
+        #region constructors
+        protected internal FutureProgress(Action action, CancellationTokenSource cancellationTokenSource,
+                                          Progress<TProgress> progress)
+            : base(action, cancellationTokenSource, progress)
+        {
+            progress.ProgressChanged += (_, args) => OnProgress();
+        }
+
+        protected internal FutureProgress(Action action, CancellationTokenSource cancellationTokenSource,
+                                          Progress<TProgress> progress,
+                                          TaskCreationOptions creationOptions)
+            : base(action, cancellationTokenSource, progress, creationOptions)
+        {
+            progress.ProgressChanged += (_, args) => OnProgress();
+        }
+
+        protected internal FutureProgress(Action<object> action, object state,
+                                          CancellationTokenSource cancellationTokenSource,
+                                          Progress<TProgress> progress)
+            : base(action, state, cancellationTokenSource, progress)
+        {
+            progress.ProgressChanged += (_, args) => OnProgress();
+        }
+
+        protected internal FutureProgress(Action<object> action, object state,
+                                          CancellationTokenSource cancellationTokenSource,
+                                          Progress<TProgress> progress,
+                                          TaskCreationOptions creationOptions)
+            : base(action, state, cancellationTokenSource, progress, creationOptions)
+        {
+            progress.ProgressChanged += (_, args) => OnProgress();
+        }
+        #endregion
+
+        #region factory methods
+        public static Future Create(Action<CancellationToken, IProgress<TProgress>> action)
+        {
+            var cts = new CancellationTokenSource();
+            var progress = new Progress<TProgress>();
+            return new Future(() => action(cts.Token, progress), cts, progress);
+        }
+
+        public static Future Create(Action<CancellationToken, IProgress<TProgress>> action, TaskCreationOptions creationOptions)
+        {
+            var cts = new CancellationTokenSource();
+            var progress = new Progress<TProgress>();
+            return new Future(() => action(cts.Token, progress), cts, progress, creationOptions);
+        }
+
+        public static Future Create(Action<CancellationToken, IProgress<TProgress>, object> action, object state)
+        {
+            var cts = new CancellationTokenSource();
+            var progress = new Progress<TProgress>();
+            return new Future(s => action(cts.Token, progress, s), state, cts, progress);
+        }
+
+        public static Future Create(Action<CancellationToken, IProgress<TProgress>, object> action, object state, TaskCreationOptions creationOptions)
+        {
+            var cts = new CancellationTokenSource();
+            var progress = new Progress<TProgress>();
+            return new Future(s => action(cts.Token, progress, s), state, cts, progress, creationOptions);
+        }
+        #endregion
+
+        public void OnProgress(TProgress value)
+        {
+            ProgressChanged.Raise(this, new ProgressEventArgs<TProgress>(value));
+        }
+    }
+
+    public class Future<TResult> : Task<TResult>, IProgress
     {
         private readonly CancellationTokenSource _cancellationTokenSource;
 
-        #region constructors
+        public event EventHandler<ProgressEventArgs> ProgressChanged;
 
-        private Future(Func<TResult> function, CancellationTokenSource cancellationTokenSource)
+        #region constructors
+        protected internal Future(Func<TResult> function, CancellationTokenSource cancellationTokenSource,
+                                  Progress progress)
             : base(function, cancellationTokenSource.Token)
         {
+            progress.ProgressChanged += (_, args) => OnProgress();
             _cancellationTokenSource = cancellationTokenSource;
         }
 
-        private Future(Func<TResult> function, CancellationTokenSource cancellationTokenSource,
-                       TaskCreationOptions creationOptions)
+        protected internal Future(Func<TResult> function, CancellationTokenSource cancellationTokenSource,
+                                  Progress progress,
+                                  TaskCreationOptions creationOptions)
             : base(function, cancellationTokenSource.Token, creationOptions)
         {
+            progress.ProgressChanged += (_, args) => OnProgress();
             _cancellationTokenSource = cancellationTokenSource;
         }
 
-        private Future(Func<object, TResult> function, object state, CancellationTokenSource cancellationTokenSource)
+        protected internal Future(Func<object, TResult> function, object state,
+                                  CancellationTokenSource cancellationTokenSource, Progress progress)
             : base(function, state, cancellationTokenSource.Token)
         {
+            progress.ProgressChanged += (_, args) => OnProgress();
             _cancellationTokenSource = cancellationTokenSource;
         }
 
-        private Future(Func<object, TResult> function, object state, CancellationTokenSource cancellationTokenSource,
-                       TaskCreationOptions creationOptions)
+        protected internal Future(Func<object, TResult> function, object state,
+                                  CancellationTokenSource cancellationTokenSource, Progress progress,
+                                  TaskCreationOptions creationOptions)
             : base(function, state, cancellationTokenSource.Token, creationOptions)
         {
+            progress.ProgressChanged += (_, args) => OnProgress();
             _cancellationTokenSource = cancellationTokenSource;
         }
         #endregion
 
         #region factory methods
-        public static Future<TResult> Create(Func<CancellationToken, TResult> function)
+        public static Future<TResult> Create(Func<CancellationToken, IProgress, TResult> function)
         {
             var cts = new CancellationTokenSource();
-            return new Future<TResult>(() => function(cts.Token), cts);
+            var progress = new Progress();
+            return new Future<TResult>(() => function(cts.Token, progress), cts, progress);
         }
 
-        public static Future<TResult> Create(Func<CancellationToken, TResult> function, TaskCreationOptions creationOptions)
+        public static Future<TResult> Create(Func<CancellationToken, IProgress, TResult> function, TaskCreationOptions creationOptions)
         {
             var cts = new CancellationTokenSource();
-            return new Future<TResult>(() => function(cts.Token), cts, creationOptions);
+            var progress = new Progress();
+            return new Future<TResult>(() => function(cts.Token, progress), cts, progress, creationOptions);
         }
 
-        public static Future<TResult> Create(Func<CancellationToken, object, TResult> function, object state)
+        public static Future<TResult> Create(Func<CancellationToken, IProgress, object, TResult> function, object state)
         {
             var cts = new CancellationTokenSource();
-            return new Future<TResult>(s => function(cts.Token, s), state, cts);
+            var progress = new Progress();
+            return new Future<TResult>(s => function(cts.Token, progress, s), state, cts, progress);
         }
 
-        public static Future<TResult> Create(Func<CancellationToken, object, TResult> function, object state, TaskCreationOptions creationOptions)
+        public static Future<TResult> Create(Func<CancellationToken, IProgress, object, TResult> function, object state, TaskCreationOptions creationOptions)
         {
             var cts = new CancellationTokenSource();
-            return new Future<TResult>(s => function(cts.Token, s), state, cts, creationOptions);
+            var progress = new Progress();
+            return new Future<TResult>(s => function(cts.Token, progress, s), state, cts, progress, creationOptions);
         }
         #endregion
 
@@ -182,7 +293,7 @@ namespace Parallel.Worker.Interface
         }
 
         /// <summary>
-        /// never throws
+        /// never throws errors from inner operation
         /// </summary>
         public new void Wait()
         {
@@ -226,6 +337,89 @@ namespace Parallel.Worker.Interface
 
             //compiler does not see this as dead code
             throw new Exception("State must be Faulted or RanToCompletion");
+        }
+
+        public void OnProgress()
+        {
+            ProgressChanged.Raise(this, new ProgressEventArgs());
+        }
+    }
+
+    /// <summary>
+    /// Implementation for operations that report progress with a value (not just hearbeats)
+    /// </summary>
+    /// <typeparam name="TResult"></typeparam>
+    /// <typeparam name="TProgress"></typeparam>
+    public class Future<TResult, TProgress> : Future<TResult>, IProgress<TProgress>
+        where TProgress : class
+    {
+        public new event EventHandler<ProgressEventArgs<TProgress>> ProgressChanged;
+
+        #region constructors
+        protected internal Future(Func<TResult> function, CancellationTokenSource cancellationTokenSource,
+                                  Progress<TProgress> progress)
+            : base(function, cancellationTokenSource, progress)
+        {
+            progress.ProgressChanged += (_, arg) => OnProgress(arg.Value);
+        }
+
+        protected internal Future(Func<TResult> function, CancellationTokenSource cancellationTokenSource,
+                                  Progress<TProgress> progress,
+                                  TaskCreationOptions creationOptions)
+            : base(function, cancellationTokenSource, progress, creationOptions)
+        {
+            progress.ProgressChanged += (_, arg) => OnProgress(arg.Value);
+        }
+
+        protected internal Future(Func<object, TResult> function, object state,
+                                  CancellationTokenSource cancellationTokenSource, Progress<TProgress> progress)
+            : base(function, state, cancellationTokenSource, progress)
+        {
+            progress.ProgressChanged += (_, arg) => OnProgress(arg.Value);
+        }
+
+        protected internal Future(Func<object, TResult> function, object state,
+                                  CancellationTokenSource cancellationTokenSource, Progress<TProgress> progress,
+                                  TaskCreationOptions creationOptions)
+            : base(function, state, cancellationTokenSource, progress, creationOptions)
+        {
+            progress.ProgressChanged += (_, arg) => OnProgress(arg.Value);
+        }
+        #endregion
+
+        #region factory methods
+        public static new Future<TResult, TProgress> Create(Func<CancellationToken, IProgress<TProgress>, TResult> function)
+        {
+            var cts = new CancellationTokenSource();
+            var progress = new Progress<TProgress>();
+            return new Future<TResult, TProgress>(() => function(cts.Token, progress), cts, progress);
+        }
+
+        public static new Future<TResult, TProgress> Create(Func<CancellationToken, IProgress<TProgress>, TResult> function, TaskCreationOptions creationOptions)
+        {
+            var cts = new CancellationTokenSource();
+            var progress = new Progress<TProgress>();
+            return new Future<TResult, TProgress>(() => function(cts.Token, progress), cts, progress, creationOptions);
+        }
+
+        public static new Future<TResult, TProgress> Create(Func<CancellationToken, IProgress<TProgress>, object, TResult> function, object state)
+        {
+            var cts = new CancellationTokenSource();
+            var progress = new Progress<TProgress>();
+            return new Future<TResult, TProgress>(s => function(cts.Token, progress, s), state, cts, progress);
+        }
+
+        public static new Future<TResult, TProgress> Create(Func<CancellationToken, IProgress<TProgress>, object, TResult> function, object state, TaskCreationOptions creationOptions)
+        {
+            var cts = new CancellationTokenSource();
+            var progress = new Progress<TProgress>();
+            return new Future<TResult, TProgress>(s => function(cts.Token, progress, s), state, cts, progress, creationOptions);
+        }
+        #endregion
+
+        public void OnProgress(TProgress value)
+        {
+            ProgressChanged.Raise(this, new ProgressEventArgs<TProgress>(value));
         }
     }
 }

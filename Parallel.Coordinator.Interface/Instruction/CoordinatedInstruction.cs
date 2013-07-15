@@ -10,22 +10,45 @@ namespace Parallel.Coordinator.Interface.Instruction
 {
     /// <summary>
     /// Represents an instruction to be executed on an IExecutor.
-    /// Contains potential cancellation/timeout errors
+    /// Contains/captures potential cancellation/timeout errors
     /// </summary>
     public class CoordinatedInstruction<TArgument, TResult>
         where TArgument : class
         where TResult : class
     {
+        private static bool _defaultTimeoutLoaded = false;
+        private static TimeSpan _defaultTimeout = TimeSpan.FromSeconds(1);
+        internal static TimeSpan DefaultTimeout
+        {
+            get
+            {
+                if (!_defaultTimeoutLoaded)
+                    LoadDefaultTimeout();
+                return _defaultTimeout;
+            }
+        }
+
+        private static void LoadDefaultTimeout()
+        {
+            
+        }
+
         private IExecutor _executor;
         private IExecutor<TArgument, TResult> _executorGeneric;
         private Func<CancellationToken, TArgument, TResult> _instruction;
-        private Task<TResult> _future;
+        private TimeSpan _timeout;
 
         public CoordinatedInstruction(IExecutor executor, Func<CancellationToken, TArgument, TResult> instruction)
+            : this(executor, instruction, DefaultTimeout)
+        {
+        }
+
+        public CoordinatedInstruction(IExecutor executor, Func<CancellationToken, TArgument, TResult> instruction, TimeSpan timeout)
         {
             _executor = executor;
             _executorGeneric = null;
             _instruction = instruction;
+            _timeout = timeout;
         }
 
         public CoordinatedInstruction(IExecutor<TArgument, TResult> executor, Func<CancellationToken, TArgument, TResult> instruction)

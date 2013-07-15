@@ -35,9 +35,9 @@ namespace Parallel.Worker.Communication.SingleChannelCallback
             Future<TResult> result = Future<TResult>.Create(applied);
             result.RunSynchronously();
             if (result.IsDone)
-                callback.DoCallback(operationId, result);
+                callback.OnCallback(operationId, result);
             else if (result.IsCanceled)
-                callback.ConfirmCancellation(operationId);
+                callback.OnCancel(operationId);
 
             _cancellationTokenSources.Remove(operationId);
         }
@@ -49,12 +49,12 @@ namespace Parallel.Worker.Communication.SingleChannelCallback
                 cts.Cancel();
         }
 
-        public void DoCallback(Guid operationId, Future<TResult> result)
+        public void OnCallback(Guid operationId, Future<TResult> result)
         {
             ResultCallback.Raise(this, new CallbackEventArgs<TResult>(operationId, result));
         }
 
-        public void ConfirmCancellation(Guid operationId)
+        public void OnCancel(Guid operationId)
         {
             CancelCallback.Raise(this, new CancelEventArgs(operationId));
         }
