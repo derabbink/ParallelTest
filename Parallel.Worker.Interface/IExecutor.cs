@@ -10,7 +10,7 @@ namespace Parallel.Worker.Interface
 {
     public interface IExecutor
     {
-        Future<TResult> Execute<TArgument, TResult>(Func<CancellationToken, IProgress, TArgument, TResult> instruction, TArgument argument)
+        Future<TResult> Execute<TArgument, TResult>(Func<CancellationToken, Action, TArgument, TResult> instruction, TArgument argument)
             where TArgument : class
             where TResult : class;
     }
@@ -19,6 +19,6 @@ namespace Parallel.Worker.Interface
         where TArgument : class
         where TResult : class
     {
-        Future<TResult> Execute(Func<CancellationToken, IProgress, TArgument, TResult> instruction, TArgument argument);
+        Future<TResult> Execute(Func<CancellationToken, Action, TArgument, TResult> instruction, TArgument argument);
     }
 }

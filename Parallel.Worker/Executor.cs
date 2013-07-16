@@ -23,7 +23,7 @@ namespace Parallel.Worker
         /// <param name="instruction"></param>
         /// <param name="argument"></param>
         /// <returns></returns>
-        public Future<TResult> Execute<TArgument, TResult>(Func<CancellationToken, IProgress, TArgument, TResult> instruction, TArgument argument)
+        public Future<TResult> Execute<TArgument, TResult>(Func<CancellationToken, Action, TArgument, TResult> instruction, TArgument argument)
             where TArgument : class
             where TResult : class
         {
@@ -31,21 +31,21 @@ namespace Parallel.Worker
         }
 
         internal static Future<TResult> ExecuteGeneric<TArgument, TResult>(
-                Func<CancellationToken, IProgress, TArgument, TResult> instruction,
+                Func<CancellationToken, Action, TArgument, TResult> instruction,
                 TArgument argument,
-                Func<Func<CancellationToken, IProgress, TArgument, TResult>, TArgument, Func<CancellationToken, IProgress, TResult>> applyArgument,
+                Func<Func<CancellationToken, Action, TArgument, TResult>, TArgument, Func<CancellationToken, Action, TResult>> applyArgument,
                 Action<Future<TResult>> completeFuture)
             where TArgument : class
             where TResult : class
         {
-            Func<CancellationToken, IProgress, TResult> safeInstruction = applyArgument(instruction, argument);
+            Func<CancellationToken, Action, TResult> safeInstruction = applyArgument(instruction, argument);
             Future<TResult> future = Future<TResult>.Create(safeInstruction);
             completeFuture(future);
             return future;
         }
 
-        protected virtual Func<CancellationToken, IProgress, TResult> ApplyArgument<TArgument, TResult>(
-                Func<CancellationToken, IProgress, TArgument, TResult> instruction,
+        protected virtual Func<CancellationToken, Action, TResult> ApplyArgument<TArgument, TResult>(
+                Func<CancellationToken, Action, TArgument, TResult> instruction,
                 TArgument argument)
             where TArgument : class
             where TResult : class
@@ -53,8 +53,8 @@ namespace Parallel.Worker
             return ApplyArgumentGeneric(instruction, argument);
         }
 
-        internal static Func<CancellationToken, IProgress, TResult> ApplyArgumentGeneric<TArgument, TResult>(
-                Func<CancellationToken, IProgress, TArgument, TResult> instruction,
+        internal static Func<CancellationToken, Action, TResult> ApplyArgumentGeneric<TArgument, TResult>(
+                Func<CancellationToken, Action, TArgument, TResult> instruction,
                 TArgument argument)
             where TArgument : class
             where TResult : class
@@ -101,13 +101,13 @@ namespace Parallel.Worker
         /// <param name="instruction"></param>
         /// <param name="argument"></param>
         /// <returns></returns>
-        public Future<TResult> Execute(Func<CancellationToken, IProgress, TArgument, TResult> instruction, TArgument argument)
+        public Future<TResult> Execute(Func<CancellationToken, Action, TArgument, TResult> instruction, TArgument argument)
         {
             return Executor.ExecuteGeneric(instruction, argument, ApplyArgument, CompleteFuture);
         }
 
-        protected virtual Func<CancellationToken, IProgress, TResult> ApplyArgument(
-                Func<CancellationToken, IProgress, TArgument, TResult> instruction,
+        protected virtual Func<CancellationToken, Action, TResult> ApplyArgument(
+                Func<CancellationToken, Action, TArgument, TResult> instruction,
                 TArgument argument)
         {
             return Executor.ApplyArgumentGeneric(instruction, argument);

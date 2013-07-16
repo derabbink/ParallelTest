@@ -18,8 +18,8 @@ namespace Parallel.Worker.Test
         private SingleChannelCallbackExecutor<Exception, object> _failureExecutor;
         private Channel<object, object> _successChannel;
         private Channel<Exception, object> _failureChannel;
-        private Func<CancellationToken, IProgress, object, object> _identity;
-        private Func<CancellationToken, IProgress, Exception, object> _throw;
+        private Func<CancellationToken, Action, object, object> _identity;
+        private Func<CancellationToken, Action, Exception, object> _throw;
 
         #region setup
 

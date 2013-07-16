@@ -10,18 +10,18 @@ namespace Parallel.Worker.Interface
 {
     public static class CallbackExecutor
     {
-        public static Future<TResult> Execute<TArgument, TResult>(this IExecutor executor, Action<CancellationToken, IProgress, TArgument, Action<TResult>> instruction, TArgument argument)
+        public static Future<TResult> Execute<TArgument, TResult>(this IExecutor executor, Action<CancellationToken, Action, TArgument, Action<TResult>> instruction, TArgument argument)
             where TArgument : class
             where TResult : class
         {
             return executor.Execute(CallbackToReturn(instruction), argument);
         }
 
-        public static Func<CancellationToken, IProgress, TArgument, TResult> CallbackToReturn<TArgument, TResult>(Action<CancellationToken, IProgress, TArgument, Action<TResult>> instruction)
+        public static Func<CancellationToken, Action, TArgument, TResult> CallbackToReturn<TArgument, TResult>(Action<CancellationToken, Action, TArgument, Action<TResult>> instruction)
             where TArgument : class
             where TResult : class
         {
-            Func<CancellationToken, IProgress, TArgument, TResult> wrapped = (ct, p, argument) =>
+            Func<CancellationToken, Action, TArgument, TResult> wrapped = (ct, p, argument) =>
             {
                 ManualResetEventSlim callbackCompleted = new ManualResetEventSlim(false);
                 TResult callbackResult = null;

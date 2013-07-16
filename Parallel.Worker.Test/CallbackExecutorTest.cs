@@ -14,10 +14,10 @@ namespace Parallel.Worker.Test
     public class CallbackExecutorTest
     {
         private IExecutor _executor;
-        private Action<CancellationToken, IProgress, object, Action<object>> _identity;
+        private Action<CancellationToken, Action, object, Action<object>> _identity;
         private object _argumentSuccessful;
-        private Action<CancellationToken, IProgress, Exception, Action<object>> _throw;
-        private Action<CancellationToken, IProgress, object, Action<object>> _identityBlocking;
+        private Action<CancellationToken, Action, Exception, Action<object>> _throw;
+        private Action<CancellationToken, Action, object, Action<object>> _identityBlocking;
         private ManualResetEventSlim _instructionBlockingResetEvent;
         private Exception _argumentFailure;
 

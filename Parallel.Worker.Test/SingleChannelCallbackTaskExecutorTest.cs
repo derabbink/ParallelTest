@@ -18,10 +18,10 @@ namespace Parallel.Worker.Test
         private Channel<Exception, object> _failureChannel;
         private IExecutor<object, object> _successExecutor;
         private IExecutor<Exception, object> _failureExecutor;
-        private Func<CancellationToken, IProgress, object, object> _identity;
+        private Func<CancellationToken, Action, object, object> _identity;
         private object _argumentSuccessful;
-        private Func<CancellationToken, IProgress, Exception, object> _throw;
-        private Func<CancellationToken, IProgress, object, object> _identityBlocking;
+        private Func<CancellationToken, Action, Exception, object> _throw;
+        private Func<CancellationToken, Action, object, object> _identityBlocking;
         private ManualResetEventSlim _instructionBlockingResetEvent;
         private Exception _argumentFailure;
 

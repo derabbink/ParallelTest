@@ -30,8 +30,7 @@ namespace Parallel.Coordinator.Interface
         /// Starts this coordinators work.
         /// Triggers next coordinator to continue when done.
         /// </summary>
-        [Obsolete("Should only be called from a Coordinator implementation", false)]
-        public abstract void Start(TArgument argument);
+        protected internal abstract void Start(TArgument argument);
 
     }
 
@@ -66,7 +65,7 @@ namespace Parallel.Coordinator.Interface
             return nextCoordinator;
         }
 
-        public override void Start(TArgument argument)
+        protected internal override void Start(TArgument argument)
         {
             _result = _instruction.Invoke(argument);
             _result.Wait();

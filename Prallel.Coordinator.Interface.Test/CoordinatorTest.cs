@@ -14,9 +14,9 @@ namespace Prallel.Coordinator.Interface.Test
     public class CoordinatorTest
     {
         private IExecutor _executor;
-        private Func<CancellationToken, IProgress, object, object> _identity;
+        private Func<CancellationToken, Action, object, object> _identity;
         private CoordinatedInstruction<object, object> _identityInstr;
-        private Func<CancellationToken, IProgress, Future<object>, object> _unwrap;
+        private Func<CancellationToken, Action, Future<object>, object> _unwrap;
         private CoordinatedInstruction<Future<object>, object> _unwrapInstr;
         private object _identityArgument;
 

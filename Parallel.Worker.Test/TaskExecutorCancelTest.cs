@@ -14,10 +14,10 @@ namespace Parallel.Worker.Test
     public class TaskExecutorCancelTest
     {
         private IExecutor _executor;
-        private Func<CancellationToken, IProgress, object, object> _identity;
-        private Func<CancellationToken, IProgress, object, object> _identityBlocking;
-        private Func<CancellationToken, IProgress, Exception, object> _throw;
-        private Func<CancellationToken, IProgress, Exception, object> _throwBlocking;
+        private Func<CancellationToken, Action, object, object> _identity;
+        private Func<CancellationToken, Action, object, object> _identityBlocking;
+        private Func<CancellationToken, Action, Exception, object> _throw;
+        private Func<CancellationToken, Action, Exception, object> _throwBlocking;
         private ManualResetEventSlim _instructionHoldingEvent;
         private ManualResetEventSlim _instructionNotifyingEvent;
         private object _argumentSuccessful;

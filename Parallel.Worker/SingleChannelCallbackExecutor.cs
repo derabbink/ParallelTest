@@ -31,11 +31,11 @@ namespace Parallel.Worker
             _server = server;
         }
 
-        protected override Func<CancellationToken, IProgress, TResult> ApplyArgument(
-                Func<CancellationToken, IProgress, TArgument, TResult> instruction,
+        protected override Func<CancellationToken, Action, TResult> ApplyArgument(
+                Func<CancellationToken, Action, TArgument, TResult> instruction,
                 TArgument argument)
         {
-            Func<CancellationToken, IProgress, TResult> wrapped = (ct, p) =>
+            Func<CancellationToken, Action, TResult> wrapped = (ct, p) =>
                 {
                     bool canceled = false;
                     Future<TResult> wrappedResult = null;

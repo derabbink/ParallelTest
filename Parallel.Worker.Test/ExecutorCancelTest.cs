@@ -14,8 +14,8 @@ namespace Parallel.Worker.Test
     public class ExecutorCancelTest
     {
         private Executor _executor;
-        private Func<CancellationToken, IProgress, object, object> _identity;
-        private Func<CancellationToken, IProgress, Exception, object> _throw;
+        private Func<CancellationToken, Action, object, object> _identity;
+        private Func<CancellationToken, Action, Exception, object> _throw;
         private object _argumentSuccessful;
         private Exception _argumentFailure;
 
