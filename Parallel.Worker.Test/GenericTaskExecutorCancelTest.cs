@@ -15,10 +15,10 @@ namespace Parallel.Worker.Test
     {
         private IExecutor<object, object> _executorSuccessful;
         private IExecutor<Exception, object> _executorFailure;
-        private Func<CancellationToken, object, object> _identity;
-        private Func<CancellationToken, object, object> _identityBlocking;
-        private Func<CancellationToken, Exception, object> _throw;
-        private Func<CancellationToken, Exception, object> _throwBlocking;
+        private Func<CancellationToken, IProgress, object, object> _identity;
+        private Func<CancellationToken, IProgress, object, object> _identityBlocking;
+        private Func<CancellationToken, IProgress, Exception, object> _throw;
+        private Func<CancellationToken, IProgress, Exception, object> _throwBlocking;
         private ManualResetEventSlim _instructionHoldingEvent;
         private ManualResetEventSlim _instructionNotifyingEvent;
         private object _argumentSuccessful;
@@ -33,15 +33,15 @@ namespace Parallel.Worker.Test
             _executorFailure = new TaskExecutor<Exception, object>();
             _instructionHoldingEvent = new ManualResetEventSlim(false);
             _instructionNotifyingEvent = new ManualResetEventSlim(false);
-            _identity = (_, a) => a;
-            _identityBlocking = (ct, a) =>
+            _identity = (_, p, a) => a;
+            _identityBlocking = (ct, p, a) =>
                 {
                     _instructionNotifyingEvent.Set();
                     _instructionHoldingEvent.Wait(ct);
                     return a;
                 };
-            _throw = (_, e) => { throw e; };
-            _throwBlocking = (ct, e) =>
+            _throw = (_, p, e) => { throw e; };
+            _throwBlocking = (ct, p, e) =>
                 {
                     _instructionNotifyingEvent.Set();
                     _instructionHoldingEvent.Wait(ct);

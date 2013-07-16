@@ -18,10 +18,10 @@ namespace Parallel.Worker.Test
         private Channel<Exception, object> _failureChannel;
         private IExecutor<object, object> _successExecutor;
         private IExecutor<Exception, object> _failureExecutor;
-        private Func<CancellationToken, object, object> _identity;
+        private Func<CancellationToken, IProgress, object, object> _identity;
         private object _argumentSuccessful;
-        private Func<CancellationToken, Exception, object> _throw;
-        private Func<CancellationToken, object, object> _identityBlocking;
+        private Func<CancellationToken, IProgress, Exception, object> _throw;
+        private Func<CancellationToken, IProgress, object, object> _identityBlocking;
         private ManualResetEventSlim _instructionBlockingResetEvent;
         private Exception _argumentFailure;
 
@@ -34,15 +34,15 @@ namespace Parallel.Worker.Test
             _failureChannel = new Channel<Exception, object>();
             _successExecutor = new SingleChannelCallbackTaskExecutor<object, object>(_successChannel, _successChannel);
             _failureExecutor = new SingleChannelCallbackTaskExecutor<Exception, object>(_failureChannel, _failureChannel);
-            _identity = (_, a) => a;
+            _identity = (_, p, a) => a;
             _instructionBlockingResetEvent = new ManualResetEventSlim(false);
-            _identityBlocking = (ct, a) =>
+            _identityBlocking = (ct, p, a) =>
                 {
                     _instructionBlockingResetEvent.Wait(ct);
                     return a;
                 };
             _argumentSuccessful = new object();
-            _throw = (_, e) => { throw e; };
+            _throw = (_, p, e) => { throw e; };
             _argumentFailure = new Exception("Expected");
         }
 
@@ -86,7 +86,9 @@ namespace Parallel.Worker.Test
             var future = _failureExecutor.Execute(_throw, _argumentFailure);
             future.Wait();
             Assert.That(future.IsFaulted, Is.True);
-            Assert.That(future.Exception.InnerException, Is.SameAs(expected));
+            //double layer of AggregateException, since between (remote)
+            // invoke and callback, there is a nested future
+            Assert.That(future.Exception.InnerException.InnerException, Is.SameAs(expected));
         }
 
         #endregion

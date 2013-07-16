@@ -14,9 +14,9 @@ namespace Prallel.Coordinator.Interface.Test
     public class CoordinatorTest
     {
         private IExecutor _executor;
-        private Func<CancellationToken, object, object> _identity;
+        private Func<CancellationToken, IProgress, object, object> _identity;
         private CoordinatedInstruction<object, object> _identityInstr;
-        private Func<CancellationToken, Future<object>, object> _unwrap;
+        private Func<CancellationToken, IProgress, Future<object>, object> _unwrap;
         private CoordinatedInstruction<Future<object>, object> _unwrapInstr;
         private object _identityArgument;
 
@@ -25,9 +25,9 @@ namespace Prallel.Coordinator.Interface.Test
         public void Setup()
         {
             _executor = new TaskExecutor();
-            _identity = (_, a) => a;
+            _identity = (_, p, a) => a;
             _identityInstr = new CoordinatedInstruction<object, object>(_executor, _identity);
-            _unwrap = (_, f) => f.Unwrap();
+            _unwrap = (_, p, f) => f.Unwrap();
             _unwrapInstr = new CoordinatedInstruction<Future<object>, object>(_executor, _unwrap);
             _identityArgument = new object();
         }

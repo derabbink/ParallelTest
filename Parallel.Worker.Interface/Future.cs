@@ -326,12 +326,7 @@ namespace Parallel.Worker.Interface
             Contract.Requires(IsDone, "State must be Faulted or RanToCompletion");
 
             if (IsFaulted)
-            {
-                if (Exception != null)
-                    throw Exception;
-                else
-                    throw new Exception("State was Faulted, without an Exception");
-            }
+                throw Exception ?? new Exception("State was Faulted, without an Exception");
             else if (IsCompleted)
                 return Result;
 

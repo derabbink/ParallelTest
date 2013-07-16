@@ -14,9 +14,9 @@ namespace Parallel.Worker.Test
     public class ExecutorTest
     {
         private Executor _executor;
-        private Func<CancellationToken, object, object> _identity;
+        private Func<CancellationToken, IProgress, object, object> _identity;
         private object _argumentSuccessful;
-        private Func<CancellationToken, Exception, object> _throw;
+        private Func<CancellationToken, IProgress, Exception, object> _throw;
         private Exception _argumentFailure;
 
         #region setup
@@ -25,9 +25,9 @@ namespace Parallel.Worker.Test
         public void Setup()
         {
             _executor = new Executor();
-            _identity = (_, a) => a;
+            _identity = (_, p, a) => a;
             _argumentSuccessful = new object();
-            _throw = (_, e) => { throw e; };
+            _throw = (_, p, e) => { throw e; };
             _argumentFailure = new Exception("Expected");
         }
 

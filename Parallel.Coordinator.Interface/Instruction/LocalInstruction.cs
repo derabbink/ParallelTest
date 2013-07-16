@@ -16,7 +16,7 @@ namespace Parallel.Coordinator.Interface.Instruction
         where TArgument : class
         where TResult : class
     {
-        public LocalInstruction(Func<CancellationToken, TArgument, TResult> instruction)
+        public LocalInstruction(Func<CancellationToken, IProgress, TArgument, TResult> instruction)
             : base(new TaskExecutor<TArgument, TResult>(), instruction) //generics are optional
         {
         }

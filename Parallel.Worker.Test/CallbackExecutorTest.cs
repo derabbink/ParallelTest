@@ -14,10 +14,10 @@ namespace Parallel.Worker.Test
     public class CallbackExecutorTest
     {
         private IExecutor _executor;
-        private Action<CancellationToken, object, Action<object>> _identity;
+        private Action<CancellationToken, IProgress, object, Action<object>> _identity;
         private object _argumentSuccessful;
-        private Action<CancellationToken, Exception, Action<object>> _throw;
-        private Action<CancellationToken, object, Action<object>> _identityBlocking;
+        private Action<CancellationToken, IProgress, Exception, Action<object>> _throw;
+        private Action<CancellationToken, IProgress, object, Action<object>> _identityBlocking;
         private ManualResetEventSlim _instructionBlockingResetEvent;
         private Exception _argumentFailure;
 
@@ -27,15 +27,15 @@ namespace Parallel.Worker.Test
         public void Setup()
         {
             _executor = new TaskExecutor();
-            _identity = (_, arg, callback) => callback(arg);
+            _identity = (_, p, arg, callback) => callback(arg);
             _instructionBlockingResetEvent = new ManualResetEventSlim(false);
-            _identityBlocking = (ct, arg, callback) =>
+            _identityBlocking = (ct, p, arg, callback) =>
                 {
                     _instructionBlockingResetEvent.Wait(ct);
                     callback(arg);
                 };
             _argumentSuccessful = new object();
-            _throw = (_, e, cb) => { throw e; };
+            _throw = (_, p, e, cb) => { throw e; };
             _argumentFailure = new Exception("Expected");
         }
 

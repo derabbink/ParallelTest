@@ -18,16 +18,16 @@ namespace Parallel.Worker.Test
         private SingleChannelCallbackExecutor<Exception, object> _failureExecutor;
         private Channel<object, object> _successChannel;
         private Channel<Exception, object> _failureChannel;
-        private Func<CancellationToken, object, object> _identity;
-        private Func<CancellationToken, Exception, object> _throw;
+        private Func<CancellationToken, IProgress, object, object> _identity;
+        private Func<CancellationToken, IProgress, Exception, object> _throw;
 
         #region setup
 
         [SetUp]
         public void Setup()
         {
-            _identity = (_, a) => a;
-            _throw = (_, e) => { throw e; };
+            _identity = (_, p, a) => a;
+            _throw = (_, p, e) => { throw e; };
             _successChannel = new Channel<object, object>();
             _failureChannel = new Channel<Exception, object>();
             _successExecutor = new SingleChannelCallbackExecutor<object, object>(_successChannel, _successChannel);
@@ -55,7 +55,9 @@ namespace Parallel.Worker.Test
             Future<object> future = _failureExecutor.Execute(_throw, expectedException);
             future.Wait();
             Assert.That(future.IsFaulted, Is.True);
-            Assert.That(future.Exception.InnerException, Is.SameAs(expectedException));
+            //double layer of AggregateException, since between (remote)
+            // invoke and callback, there is a nested future
+            Assert.That(future.Exception.InnerException.InnerException, Is.SameAs(expectedException));
         }
 
         #endregion

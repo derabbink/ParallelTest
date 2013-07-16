@@ -17,8 +17,8 @@ namespace Parallel.Worker.Test.Communication.SingleChannelCallback
         private Channel<object, object> _channelSuccess;
         private Channel<Exception, object> _channelFail;
         private Guid _operationId;
-        private Func<CancellationToken, object, object> _identity;
-        private Func<CancellationToken, Exception, object> _throw;
+        private Func<CancellationToken, IProgress, object, object> _identity;
+        private Func<CancellationToken, IProgress, Exception, object> _throw;
         private ManualResetEventSlim _callbackCompleted;
         private Future<object> _operationResult;
         private EventHandler<CallbackEventArgs<object>> _callbackHandler;
@@ -31,8 +31,8 @@ namespace Parallel.Worker.Test.Communication.SingleChannelCallback
             _channelSuccess = new Channel<object, object>();
             _channelFail = new Channel<Exception, object>();
             _operationId = new Guid();
-            _identity = (_, a) => a;
-            _throw = (_, e) => { throw e; };
+            _identity = (_, p, a) => a;
+            _throw = (_, p, e) => { throw e; };
             _callbackCompleted = new ManualResetEventSlim(false);
             _operationResult = null;
             _callbackHandler = (sender, args) =>

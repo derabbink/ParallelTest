@@ -14,10 +14,10 @@ namespace Parallel.Worker.Test
     public class TaskExecutorTest
     {
         private IExecutor _executor;
-        private Func<CancellationToken, object, object> _identity;
+        private Func<CancellationToken, IProgress, object, object> _identity;
         private object _argumentSuccessful;
-        private Func<CancellationToken, Exception, object> _throw;
-        private Func<CancellationToken, object, object> _identityBlocking;
+        private Func<CancellationToken, IProgress, Exception, object> _throw;
+        private Func<CancellationToken, IProgress, object, object> _identityBlocking;
         private ManualResetEventSlim _instructionHoldingEvent;
         private ManualResetEventSlim _instructionNotifyingEvent;
         private Exception _argumentFailure;
@@ -28,17 +28,17 @@ namespace Parallel.Worker.Test
         public void Setup()
         {
             _executor = new TaskExecutor();
-            _identity = (_, a) => a;
+            _identity = (_, p, a) => a;
             _instructionNotifyingEvent = new ManualResetEventSlim(false);
             _instructionHoldingEvent = new ManualResetEventSlim(false);
-            _identityBlocking = (ct, a) =>
+            _identityBlocking = (ct, p, a) =>
                 {
                     _instructionNotifyingEvent.Set();
                     _instructionHoldingEvent.Wait(ct);
                     return a;
                 };
             _argumentSuccessful = new object();
-            _throw = (_, e) => { throw e; };
+            _throw = (_, p, e) => { throw e; };
             _argumentFailure = new Exception("Expected");
         }
 
