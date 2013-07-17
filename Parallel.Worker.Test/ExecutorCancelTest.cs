@@ -36,22 +36,28 @@ namespace Parallel.Worker.Test
         #region tests
 
         #region successful cancelled state
+        /// <summary>
+        /// completed futures can't be canceled
+        /// </summary>
         [Test]
         public void SequentialCancellationSuccessful()
         {
             Future<object> future = _executor.Execute(_identity, _argumentSuccessful);
             //future.Wait() not required
             future.Cancel();
-            Assert.That(future.IsCanceled, Is.True);
+            Assert.That(future.IsCanceled, Is.False);
         }
 
+        /// <summary>
+        /// completed futures can't be canceled
+        /// </summary>
         [Test]
         public void SequentialCancellationFailure()
         {
             Future<object> future = _executor.Execute(_throw, _argumentFailure);
             //future.Wait() not required
             future.Cancel();
-            Assert.That(future.IsCanceled, Is.True);
+            Assert.That(future.IsCanceled, Is.False);
         }
         #endregion
 

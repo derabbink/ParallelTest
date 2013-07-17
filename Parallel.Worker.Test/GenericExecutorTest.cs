@@ -62,7 +62,7 @@ namespace Parallel.Worker.Test
             var future = _failureExecutor.Execute(_throw, _argumentFailure);
             future.Wait();
             Assert.That(future.IsFaulted, Is.True);
-            Assert.That(future.Result, Is.SameAs(expected));
+            Assert.That(future.Exception.InnerException, Is.SameAs(expected));
         }
 
         #endregion
