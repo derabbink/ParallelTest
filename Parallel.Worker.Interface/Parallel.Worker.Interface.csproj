@@ -99,6 +99,8 @@
     <Compile Include="Future.cs" />
     <Compile Include="IExecutor.cs" />
     <Compile Include="Instruction\Wrapper.cs" />
+    <Compile Include="IProgress.cs" />
+    <Compile Include="Progress.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

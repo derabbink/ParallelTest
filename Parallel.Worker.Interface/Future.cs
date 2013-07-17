@@ -12,68 +12,83 @@ namespace Parallel.Worker.Interface
     public class Future : Task
     {
         private readonly CancellationTokenSource _cancellationTokenSource;
+        private readonly Progress _progress;
 
         #region constructors
-        protected Future(Action action, CancellationTokenSource cancellationTokenSource)
+        protected Future(Action action, CancellationTokenSource cancellationTokenSource, Progress progress)
             : base(action, cancellationTokenSource.Token)
         {
             _cancellationTokenSource = cancellationTokenSource;
+            _progress = progress;
         }
 
         protected Future(Action action, CancellationTokenSource cancellationTokenSource,
+                         Progress progress,
                          TaskCreationOptions creationOptions)
             : base(action, cancellationTokenSource.Token, creationOptions)
         {
             _cancellationTokenSource = cancellationTokenSource;
-        }
-
-        protected Future(Action<object> action, object state, CancellationTokenSource cancellationTokenSource)
-            : base(action, state, cancellationTokenSource.Token)
-        {
-            _cancellationTokenSource = cancellationTokenSource;
+            _progress = progress;
         }
 
         protected Future(Action<object> action, object state, CancellationTokenSource cancellationTokenSource,
+                         Progress progress)
+            : base(action, state, cancellationTokenSource.Token)
+        {
+            _cancellationTokenSource = cancellationTokenSource;
+            _progress = progress;
+        }
+
+        protected Future(Action<object> action, object state, CancellationTokenSource cancellationTokenSource,
+                         Progress progress,
                          TaskCreationOptions creationOptions)
             : base(action, state, cancellationTokenSource.Token, creationOptions)
         {
             _cancellationTokenSource = cancellationTokenSource;
+            _progress = progress;
         }
         #endregion
 
         #region factory methods
-        public static Future Create(Action<CancellationToken, Action> action, Action reportProgress)
+        public static Future Create(Action<CancellationToken, Action> action)
         {
             var cts = new CancellationTokenSource();
-            return new Future(() => action(cts.Token, reportProgress), cts);
+            Progress progress = new Progress();
+            return new Future(() => action(cts.Token, progress.Report), cts, progress);
         }
 
-        public static Future Create(Action<CancellationToken, Action> action, Action reportProgress, TaskCreationOptions creationOptions)
+        public static Future Create(Action<CancellationToken, Action> action, TaskCreationOptions creationOptions)
         {
             var cts = new CancellationTokenSource();
-            return new Future(() => action(cts.Token, reportProgress), cts, creationOptions);
+            Progress progress = new Progress();
+            return new Future(() => action(cts.Token, progress.Report), cts, progress, creationOptions);
         }
 
-        public static Future Create(Action<CancellationToken, Action, object> action, Action reportProgress, object state)
+        public static Future Create(Action<CancellationToken, Action, object> action, object state)
         {
             var cts = new CancellationTokenSource();
-            return new Future(s => action(cts.Token, reportProgress, s), state, cts);
+            Progress progress = new Progress();
+            return new Future(s => action(cts.Token, progress.Report, s), state, cts, progress);
         }
 
-        public static Future Create(Action<CancellationToken, Action, object> action, Action reportProgress, object state, TaskCreationOptions creationOptions)
+        public static Future Create(Action<CancellationToken, Action, object> action, object state, TaskCreationOptions creationOptions)
         {
             var cts = new CancellationTokenSource();
-            return new Future(s => action(cts.Token, reportProgress, s), state, cts, creationOptions);
+            Progress progress = new Progress();
+            return new Future(s => action(cts.Token, progress.Report, s), state, cts, progress, creationOptions);
         }
         #endregion
 
+        #region properties
         /// <summary>
         /// Returns true if IsCompleted or IsFaulted
         /// </summary>
         public bool IsDone {
             get { return IsCompleted || IsFaulted; }
         }
+        #endregion
 
+        #region operations
         /// <summary>
         /// never throws errors from inner operation
         /// </summary>
@@ -86,21 +101,9 @@ namespace Parallel.Worker.Interface
             catch {}
         }
 
-        public static void WaitAll(IEnumerable<Future> futures)
-        {
-            foreach (Future f in futures)
-                f.Wait();
-        }
-
         public void Cancel()
         {
             _cancellationTokenSource.Cancel();
-        }
-
-        public static void CancelAll(IEnumerable<Future> futures)
-        {
-            foreach (Future f in futures)
-                f.Cancel();
         }
 
         public void Unwrap()
@@ -113,6 +116,33 @@ namespace Parallel.Worker.Interface
                     throw new Exception("State was Faulted, without an Exception");
             }
         }
+
+        #region event subscription
+        public void SubscribeProgress(EventHandler<ProgressEventArgs> handler)
+        {
+            _progress.ProgressChanged += handler;
+        }
+
+        public void UnsubscribeProgress(EventHandler<ProgressEventArgs> handler)
+        {
+            _progress.ProgressChanged -= handler;
+        }
+        #endregion
+        #endregion
+
+        #region static helper methods
+        public static void WaitAll(IEnumerable<Future> futures)
+        {
+            foreach (Future f in futures)
+                f.Wait();
+        }
+
+        public static void CancelAll(IEnumerable<Future> futures)
+        {
+            foreach (Future f in futures)
+                f.Cancel();
+        }
+        #endregion
     }
 
     /// <summary>
@@ -123,119 +153,167 @@ namespace Parallel.Worker.Interface
     public class FutureProgress<TProgress> : Future
         where TProgress : class
     {
+        private readonly Progress<TProgress> _progress;
+
         #region constructors
-        protected FutureProgress(Action action, CancellationTokenSource cancellationTokenSource)
-            : base(action, cancellationTokenSource)
+        protected FutureProgress(Action action, CancellationTokenSource cancellationTokenSource,
+                                 Progress<TProgress> progress)
+            : base(action, cancellationTokenSource, progress)
         {
+            _progress = progress;
         }
 
         protected FutureProgress(Action action, CancellationTokenSource cancellationTokenSource,
+                                 Progress<TProgress> progress,
                                  TaskCreationOptions creationOptions)
-            : base(action, cancellationTokenSource, creationOptions)
+            : base(action, cancellationTokenSource, progress, creationOptions)
         {
+            _progress = progress;
         }
 
         protected FutureProgress(Action<object> action, object state,
-                                 CancellationTokenSource cancellationTokenSource)
-            : base(action, state, cancellationTokenSource)
+                                 CancellationTokenSource cancellationTokenSource, Progress<TProgress> progress)
+            : base(action, state, cancellationTokenSource, progress)
         {
+            _progress = progress;
         }
 
         protected FutureProgress(Action<object> action, object state,
-                                 CancellationTokenSource cancellationTokenSource,
+                                 CancellationTokenSource cancellationTokenSource, Progress<TProgress> progress,
                                  TaskCreationOptions creationOptions)
-            : base(action, state, cancellationTokenSource, creationOptions)
+            : base(action, state, cancellationTokenSource, progress, creationOptions)
         {
+            _progress = progress;
         }
         #endregion
 
         #region factory methods
-        public static FutureProgress<TProgress> Create(Action<CancellationToken, Action<TProgress>> action, Action<TProgress> reportProgress)
+        public static FutureProgress<TProgress> Create(Action<CancellationToken, Action<TProgress>> action)
         {
             var cts = new CancellationTokenSource();
-            return new FutureProgress<TProgress>(() => action(cts.Token, reportProgress), cts);
+            Progress<TProgress> progress = new Progress<TProgress>();
+            return new FutureProgress<TProgress>(() => action(cts.Token, progress.Report), cts, progress);
         }
 
-        public static FutureProgress<TProgress> Create(Action<CancellationToken, Action<TProgress>> action, Action<TProgress> reportProgress, TaskCreationOptions creationOptions)
+        public static FutureProgress<TProgress> Create(Action<CancellationToken, Action<TProgress>> action, TaskCreationOptions creationOptions)
         {
             var cts = new CancellationTokenSource();
-            return new FutureProgress<TProgress>(() => action(cts.Token, reportProgress), cts, creationOptions);
+            Progress<TProgress> progress = new Progress<TProgress>();
+            return new FutureProgress<TProgress>(() => action(cts.Token, progress.Report), cts, progress, creationOptions);
         }
 
-        public static FutureProgress<TProgress> Create(Action<CancellationToken, Action<TProgress>, object> action, Action<TProgress> reportProgress, object state)
+        public static FutureProgress<TProgress> Create(Action<CancellationToken, Action<TProgress>, object> action, object state)
         {
             var cts = new CancellationTokenSource();
-            return new FutureProgress<TProgress>(s => action(cts.Token, reportProgress, s), state, cts);
+            Progress<TProgress> progress = new Progress<TProgress>();
+            return new FutureProgress<TProgress>(s => action(cts.Token, progress.Report, s), state, cts, progress);
         }
 
-        public static FutureProgress<TProgress> Create(Action<CancellationToken, Action<TProgress>, object> action, Action<TProgress> reportProgress, object state, TaskCreationOptions creationOptions)
+        public static FutureProgress<TProgress> Create(Action<CancellationToken, Action<TProgress>, object> action, object state, TaskCreationOptions creationOptions)
         {
             var cts = new CancellationTokenSource();
-            return new FutureProgress<TProgress>(s => action(cts.Token, reportProgress, s), state, cts, creationOptions);
+            Progress<TProgress> progress = new Progress<TProgress>();
+            return new FutureProgress<TProgress>(s => action(cts.Token, progress.Report, s), state, cts, progress, creationOptions);
         }
+        #endregion
+
+        #region operations
+        #region event subscription
+        //hide method
+        private new void SubscribeProgress(EventHandler<ProgressEventArgs> handler)
+        {
+            throw new NotImplementedException();
+        }
+
+        //hide method
+        private new void UnsubscribeProgress(EventHandler<ProgressEventArgs> handler)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SubscribeProgress(EventHandler<ProgressEventArgs<TProgress>> handler)
+        {
+            _progress.ProgressChanged += handler;
+        }
+
+        public void UnsubscribeProgress(EventHandler<ProgressEventArgs<TProgress>> handler)
+        {
+            _progress.ProgressChanged -= handler;
+        }
+        #endregion
         #endregion
     }
 
     public class Future<TResult> : Task<TResult>
     {
         private readonly CancellationTokenSource _cancellationTokenSource;
+        private readonly Progress _progress;
 
         #region constructors
-        protected Future(Func<TResult> function, CancellationTokenSource cancellationTokenSource)
+        protected Future(Func<TResult> function, CancellationTokenSource cancellationTokenSource, Progress progress)
             : base(function, cancellationTokenSource.Token)
         {
             _cancellationTokenSource = cancellationTokenSource;
+            _progress = progress;
         }
 
-        protected Future(Func<TResult> function, CancellationTokenSource cancellationTokenSource,
+        protected Future(Func<TResult> function, CancellationTokenSource cancellationTokenSource, Progress progress,
                          TaskCreationOptions creationOptions)
             : base(function, cancellationTokenSource.Token, creationOptions)
         {
             _cancellationTokenSource = cancellationTokenSource;
+            _progress = progress;
         }
 
         protected Future(Func<object, TResult> function, object state,
-                         CancellationTokenSource cancellationTokenSource)
+                         CancellationTokenSource cancellationTokenSource, Progress progress)
             : base(function, state, cancellationTokenSource.Token)
         {
             _cancellationTokenSource = cancellationTokenSource;
+            _progress = progress;
         }
 
         protected Future(Func<object, TResult> function, object state,
-                         CancellationTokenSource cancellationTokenSource,
+                         CancellationTokenSource cancellationTokenSource, Progress progress,
                          TaskCreationOptions creationOptions)
             : base(function, state, cancellationTokenSource.Token, creationOptions)
         {
             _cancellationTokenSource = cancellationTokenSource;
+            _progress = progress;
         }
         #endregion
 
         #region factory methods
-        public static Future<TResult> Create(Func<CancellationToken, Action, TResult> function, Action reportProgress)
+        public static Future<TResult> Create(Func<CancellationToken, Action, TResult> function)
         {
             var cts = new CancellationTokenSource();
-            return new Future<TResult>(() => function(cts.Token, reportProgress), cts);
+            Progress progress = new Progress();
+            return new Future<TResult>(() => function(cts.Token, progress.Report), cts, progress);
         }
 
-        public static Future<TResult> Create(Func<CancellationToken, Action, TResult> function, Action reportProgress, TaskCreationOptions creationOptions)
+        public static Future<TResult> Create(Func<CancellationToken, Action, TResult> function, TaskCreationOptions creationOptions)
         {
             var cts = new CancellationTokenSource();
-            return new Future<TResult>(() => function(cts.Token, reportProgress), cts, creationOptions);
+            Progress progress = new Progress();
+            return new Future<TResult>(() => function(cts.Token, progress.Report), cts, progress, creationOptions);
         }
 
-        public static Future<TResult> Create(Func<CancellationToken, Action, object, TResult> function, Action reportProgress, object state)
+        public static Future<TResult> Create(Func<CancellationToken, Action, object, TResult> function, object state)
         {
             var cts = new CancellationTokenSource();
-            return new Future<TResult>(s => function(cts.Token, reportProgress, s), state, cts);
+            Progress progress = new Progress();
+            return new Future<TResult>(s => function(cts.Token, progress.Report, s), state, cts, progress);
         }
 
-        public static Future<TResult> Create(Func<CancellationToken, Action, object, TResult> function, Action reportProgress, object state, TaskCreationOptions creationOptions)
+        public static Future<TResult> Create(Func<CancellationToken, Action, object, TResult> function, object state, TaskCreationOptions creationOptions)
         {
             var cts = new CancellationTokenSource();
-            return new Future<TResult>(s => function(cts.Token, reportProgress, s), state, cts, creationOptions);
+            Progress progress = new Progress();
+            return new Future<TResult>(s => function(cts.Token, progress.Report, s), state, cts, progress, creationOptions);
         }
         #endregion
 
+        #region properties
         /// <summary>
         /// Returns true if IsCompleted or IsFaulted
         /// </summary>
@@ -243,7 +321,9 @@ namespace Parallel.Worker.Interface
         {
             get { return IsCompleted || IsFaulted; }
         }
+        #endregion
 
+        #region operations
         /// <summary>
         /// never throws errors from inner operation
         /// </summary>
@@ -256,21 +336,9 @@ namespace Parallel.Worker.Interface
             catch { }
         }
 
-        public static void WaitAll(IEnumerable<Future<TResult>> futures)
-        {
-            foreach (Future<TResult> f in futures)
-                f.Wait();
-        }
-
         public void Cancel()
         {
             _cancellationTokenSource.Cancel();
-        }
-
-        public static void CancelAll(IEnumerable<Future<TResult>> futures)
-        {
-            foreach (Future<TResult> f in futures)
-                f.Cancel();
         }
 
         public TResult Unwrap()
@@ -285,6 +353,33 @@ namespace Parallel.Worker.Interface
             //compiler does not see this as dead code
             throw new Exception("State must be Faulted or RanToCompletion");
         }
+
+        #region event subscription
+        public void SubscribeProgress(EventHandler<ProgressEventArgs> handler)
+        {
+            _progress.ProgressChanged += handler;
+        }
+
+        public void UnsubscribeProgress(EventHandler<ProgressEventArgs> handler)
+        {
+            _progress.ProgressChanged -= handler;
+        }
+        #endregion
+        #endregion
+
+        #region static helper methods
+        public static void WaitAll(IEnumerable<Future<TResult>> futures)
+        {
+            foreach (Future<TResult> f in futures)
+                f.Wait();
+        }
+
+        public static void CancelAll(IEnumerable<Future<TResult>> futures)
+        {
+            foreach (Future<TResult> f in futures)
+                f.Cancel();
+        }
+        #endregion
     }
 
     /// <summary>
@@ -297,54 +392,60 @@ namespace Parallel.Worker.Interface
     {
 
         #region constructors
-        protected Future(Func<TResult> function, CancellationTokenSource cancellationTokenSource)
-            : base(function, cancellationTokenSource)
+        protected Future(Func<TResult> function, CancellationTokenSource cancellationTokenSource,
+                         Progress<TProgress> progress)
+            : base(function, cancellationTokenSource, progress)
         {
         }
 
         protected Future(Func<TResult> function, CancellationTokenSource cancellationTokenSource,
+                         Progress<TProgress> progress,
                          TaskCreationOptions creationOptions)
-            : base(function, cancellationTokenSource, creationOptions)
+            : base(function, cancellationTokenSource, progress, creationOptions)
         {
         }
 
         protected Future(Func<object, TResult> function, object state,
-                         CancellationTokenSource cancellationTokenSource)
-            : base(function, state, cancellationTokenSource)
+                         CancellationTokenSource cancellationTokenSource, Progress<TProgress> progress)
+            : base(function, state, cancellationTokenSource, progress)
         {
         }
 
         protected Future(Func<object, TResult> function, object state,
-                         CancellationTokenSource cancellationTokenSource,
+                         CancellationTokenSource cancellationTokenSource, Progress<TProgress> progress,
                          TaskCreationOptions creationOptions)
-            : base(function, state, cancellationTokenSource, creationOptions)
+            : base(function, state, cancellationTokenSource, progress, creationOptions)
         {
         }
         #endregion
 
         #region factory methods
-        public static new Future<TResult, TProgress> Create(Func<CancellationToken, Action<TProgress>, TResult> function, Action<TProgress> reportProgress)
+        public static new Future<TResult, TProgress> Create(Func<CancellationToken, Action<TProgress>, TResult> function)
         {
             var cts = new CancellationTokenSource();
-            return new Future<TResult, TProgress>(() => function(cts.Token, reportProgress), cts);
+            Progress<TProgress> progress = new Progress<TProgress>();
+            return new Future<TResult, TProgress>(() => function(cts.Token, progress.Report), cts, progress);
         }
 
-        public static new Future<TResult, TProgress> Create(Func<CancellationToken, Action<TProgress>, TResult> function, Action<TProgress> reportProgress, TaskCreationOptions creationOptions)
+        public static new Future<TResult, TProgress> Create(Func<CancellationToken, Action<TProgress>, TResult> function, TaskCreationOptions creationOptions)
         {
             var cts = new CancellationTokenSource();
-            return new Future<TResult, TProgress>(() => function(cts.Token, reportProgress), cts, creationOptions);
+            Progress<TProgress> progress = new Progress<TProgress>();
+            return new Future<TResult, TProgress>(() => function(cts.Token, progress.Report), cts, progress, creationOptions);
         }
 
-        public static new Future<TResult, TProgress> Create(Func<CancellationToken, Action<TProgress>, object, TResult> function, Action<TProgress> reportProgress, object state)
+        public static new Future<TResult, TProgress> Create(Func<CancellationToken, Action<TProgress>, object, TResult> function, object state)
         {
             var cts = new CancellationTokenSource();
-            return new Future<TResult, TProgress>(s => function(cts.Token, reportProgress, s), state, cts);
+            Progress<TProgress> progress = new Progress<TProgress>();
+            return new Future<TResult, TProgress>(s => function(cts.Token, progress.Report, s), state, cts, progress);
         }
 
-        public static new Future<TResult, TProgress> Create(Func<CancellationToken, Action<TProgress>, object, TResult> function, Action<TProgress> reportProgress, object state, TaskCreationOptions creationOptions)
+        public static new Future<TResult, TProgress> Create(Func<CancellationToken, Action<TProgress>, object, TResult> function, object state, TaskCreationOptions creationOptions)
         {
             var cts = new CancellationTokenSource();
-            return new Future<TResult, TProgress>(s => function(cts.Token, reportProgress, s), state, cts, creationOptions);
+            Progress<TProgress> progress = new Progress<TProgress>();
+            return new Future<TResult, TProgress>(s => function(cts.Token, progress.Report, s), state, cts, progress, creationOptions);
         }
         #endregion
     }

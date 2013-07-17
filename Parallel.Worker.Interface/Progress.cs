@@ -15,7 +15,7 @@ namespace Parallel.Worker.Interface
     {
         public event EventHandler<ProgressEventArgs> ProgressChanged;
 
-        public void OnProgress()
+        public void Report()
         {
             ProgressChanged.Raise(this, new ProgressEventArgs());
         }
@@ -30,7 +30,13 @@ namespace Parallel.Worker.Interface
     {
         public new event EventHandler<ProgressEventArgs<TValue>> ProgressChanged;
 
-        public void OnProgress(TValue value)
+        //hide method
+        private new void Report()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Report(TValue value)
         {
             ProgressChanged.Raise(this, new ProgressEventArgs<TValue>(value));
         }

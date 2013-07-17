@@ -8,12 +8,12 @@ namespace Parallel.Worker.Interface
 {
     public interface IProgress
     {
-        void OnProgress();
+        void Report();
     }
 
     public interface IProgress<TValue>
         where TValue : class
     {
-        void OnProgress(TValue value);
+        void Report(TValue value);
     }
 }
