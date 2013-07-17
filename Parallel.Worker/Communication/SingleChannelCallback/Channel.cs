@@ -8,6 +8,7 @@ using System.Threading;
 using Parallel.Worker.Events;
 using Parallel.Worker.Interface;
 using Parallel.Worker.Interface.Communication.SingleChannelCallback;
+using Parallel.Worker.Interface.Events;
 using Parallel.Worker.Interface.Events.SingleChannelCallback;
 using Parallel.Worker.Interface.Instruction;
 
@@ -18,6 +19,7 @@ namespace Parallel.Worker.Communication.SingleChannelCallback
         where TResult : class
     {
         private event EventHandler<CallbackEventArgs<TResult>> ResultCallback;
+        private event EventHandler<CallbackProgressEventArgs> ProgressCallback;
         private event EventHandler<CancelEventArgs> CancelCallback;
         private IDictionary<Guid, CancellationTokenSource> _cancellationTokenSources; 
 
@@ -33,7 +35,12 @@ namespace Parallel.Worker.Communication.SingleChannelCallback
 
             Func<CancellationToken, Action, TResult> applied = Executor.ApplyArgumentGeneric(instruction, argument);
             Future<TResult> result = Future<TResult>.Create(applied);
+            EventHandler<ProgressEventArgs> progressHandler = (src, arg) => callback.OnProgress(operationId);
+            result.SubscribeProgress(progressHandler);
+            
             result.RunSynchronously();
+            
+            result.UnsubscribeProgress(progressHandler);
             if (result.IsDone)
                 callback.OnCallback(operationId, result);
             else if (result.IsCanceled)
@@ -54,6 +61,11 @@ namespace Parallel.Worker.Communication.SingleChannelCallback
             ResultCallback.Raise(this, new CallbackEventArgs<TResult>(operationId, result));
         }
 
+        public void OnProgress(Guid operationId)
+        {
+            ProgressCallback.Raise(this, new CallbackProgressEventArgs(operationId));
+        }
+
         public void OnCancel(Guid operationId)
         {
             CancelCallback.Raise(this, new CancelEventArgs(operationId));
@@ -66,6 +78,15 @@ namespace Parallel.Worker.Communication.SingleChannelCallback
         public void UnsubscribeCallbackEvent(EventHandler<CallbackEventArgs<TResult>> handler)
         {
             ResultCallback -= handler;
+        }
+
+        public void SubscribeProgressEvent(EventHandler<CallbackProgressEventArgs> handler)
+        {
+            ProgressCallback += handler;
+        }
+        public void UnsubscribeProgressEvent(EventHandler<CallbackProgressEventArgs> handler)
+        {
+            ProgressCallback -= handler;
         }
 
         public void SubscribeCancellationEvent(EventHandler<CancelEventArgs> handler)

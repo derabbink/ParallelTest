@@ -47,14 +47,14 @@ namespace Parallel.Worker
                             wrappedResult = result;
                             resultBlock.Set();
                         };
+                    Action progressCallback = p;
                     Action cancellationCallback = () =>
                         {
                             canceled = true;
                             resultBlock.Set();
                         };
-                    Guid operationId = SetupCallbackListeners(_client, resultCallback, cancellationCallback);
+                    Guid operationId = SetupCallbackListeners(_client, resultCallback, progressCallback, cancellationCallback);
                     ct.Register(() => _server.Cancel(operationId));
-                    //TODO wrap layer around IProgress as well
                     _server.Run(operationId, instruction, argument, _client);
 
                     resultBlock.Wait();
@@ -67,30 +67,41 @@ namespace Parallel.Worker
             return wrapped;
         }
 
-        private static Guid SetupCallbackListeners(IClient<TResult> callbackChannel, Action<Future<TResult>> resultCallback, Action cancelCallback)
+        private static Guid SetupCallbackListeners(IClient<TResult> callbackChannel, Action<Future<TResult>> resultCallback, Action progressCallback, Action cancelCallback)
         {
             Guid operationId = new Guid();
             EventHandler<CallbackEventArgs<TResult>> callbackListener = null;
+            EventHandler<CallbackProgressEventArgs> progressListener = null;
             EventHandler<CancelEventArgs> cancellationListener = null;
             callbackListener = (sender, args) =>
                 {
                     if (args.OperationId == operationId)
                     {
                         callbackChannel.UnsubscribeCallbackEvent(callbackListener);
+                        callbackChannel.UnsubscribeProgressEvent(progressListener);
                         callbackChannel.UnsubscribeCancellationEvent(cancellationListener);
                         resultCallback(args.Result);
                     }
                 };
+            progressListener = (sender, args) =>
+            {
+                if (args.OperationId == operationId)
+                {
+                    progressCallback();
+                }
+            };
             cancellationListener = (sender, args) =>
                 {
                     if (args.OperationId == operationId)
                     {
                         callbackChannel.UnsubscribeCallbackEvent(callbackListener);
+                        callbackChannel.UnsubscribeProgressEvent(progressListener);
                         callbackChannel.UnsubscribeCancellationEvent(cancellationListener);
                         cancelCallback();
                     }
                 };
             callbackChannel.SubscribeCallbackEvent(callbackListener);
+            callbackChannel.SubscribeProgressEvent(progressListener);
             callbackChannel.SubscribeCancellationEvent(cancellationListener);
             return operationId;
         }
