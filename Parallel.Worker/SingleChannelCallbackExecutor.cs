@@ -39,7 +39,7 @@ namespace Parallel.Worker
                 {
                     bool canceled = false;
                     Future<TResult> wrappedResult = null;
-                    ManualResetEventSlim resultBlock = new ManualResetEventSlim(false);
+                    ManualResetEvent resultBlock = new ManualResetEvent(false);
 
                     Action<Future<TResult>> resultCallback = result =>
                         {
@@ -57,7 +57,7 @@ namespace Parallel.Worker
                     ct.Register(() => _server.Cancel(operationId));
                     _server.Run(operationId, instruction, argument, _client);
 
-                    resultBlock.Wait();
+                    resultBlock.WaitOne();
                     if (canceled)
                         return null;
                     else

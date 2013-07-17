@@ -98,9 +98,12 @@
     <Compile Include="Events\SingleChannelCallback\CallbackProgressEventArgs.cs" />
     <Compile Include="Events\SingleChannelCallback\CancelEventArgs.cs" />
     <Compile Include="Future.cs" />
+    <Compile Include="IAwaitable.cs" />
     <Compile Include="IExecutor.cs" />
+    <Compile Include="ICancelable.cs" />
     <Compile Include="Instruction\Wrapper.cs" />
     <Compile Include="IProgress.cs" />
+    <Compile Include="IProgressEventSource.cs" />
     <Compile Include="Progress.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -23,29 +23,18 @@ namespace Parallel.Coordinator.Interface
         }
     }
 
-    public abstract class Coordinator<TArgument>
-        where TArgument : class
-    {
-        /// <summary>
-        /// Starts this coordinators work.
-        /// Triggers next coordinator to continue when done.
-        /// </summary>
-        protected internal abstract void Start(TArgument argument);
-
-    }
-
-    public class Coordinator<TArgument, TResult> : Coordinator<TArgument>
+    public class Coordinator<TArgument, TResult>
         where TArgument : class
         where TResult : class
     {
         private CoordinatedInstruction<TArgument, TResult> _instruction;
 
         private Future<TResult> _result;
-        private ManualResetEventSlim _resultBlock;
+        private ManualResetEvent _resultBlock;
 
         public Coordinator(CoordinatedInstruction<TArgument, TResult> instruction)
         {
-            _resultBlock = new ManualResetEventSlim(false);
+            _resultBlock = new ManualResetEvent(false);
             _instruction = instruction;
         }
 
@@ -65,7 +54,7 @@ namespace Parallel.Coordinator.Interface
             return nextCoordinator;
         }
 
-        protected internal override void Start(TArgument argument)
+        protected internal void Start(TArgument argument)
         {
             _result = _instruction.Invoke(argument);
             _result.Wait();
@@ -80,7 +69,7 @@ namespace Parallel.Coordinator.Interface
         {
             get
             {
-                _resultBlock.Wait();
+                _resultBlock.WaitOne();
                 return _result;
             }
         }

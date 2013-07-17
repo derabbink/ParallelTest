@@ -9,7 +9,7 @@ using Parallel.Worker.Interface.Events;
 
 namespace Parallel.Worker.Interface
 {
-    public class Future : Task
+    public class Future : Task, IAwaitable, ICancelable, IProgressEventSource
     {
         private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly Progress _progress;
@@ -101,6 +101,28 @@ namespace Parallel.Worker.Interface
             catch {}
         }
 
+        /// <summary>
+        /// never throws errors from inner operation
+        /// </summary>
+        /// <param name="timeoutMS"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public new bool Wait(int timeoutMS, CancellationToken cancellationToken)
+        {
+            try
+            {
+                return base.Wait(timeoutMS, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                //exception from when the WAIT was cancelled, not the actual operation
+                throw;
+            }
+            catch {}
+            //should not occur
+            return IsDone;
+        }
+
         public void Cancel()
         {
             _cancellationTokenSource.Cancel();
@@ -150,7 +172,7 @@ namespace Parallel.Worker.Interface
     /// Name must be different from `Future&lt;TProgress&gt;` since that clashes with `Future&lt;TResult&gt;`
     /// </summary>
     /// <typeparam name="TProgress"></typeparam>
-    public class FutureProgress<TProgress> : Future
+    public class FutureProgress<TProgress> : Future, IProgressEventSource<TProgress>
         where TProgress : class
     {
         private readonly Progress<TProgress> _progress;
@@ -244,7 +266,7 @@ namespace Parallel.Worker.Interface
         #endregion
     }
 
-    public class Future<TResult> : Task<TResult>
+    public class Future<TResult> : Task<TResult>, IAwaitable, ICancelable, IProgressEventSource
     {
         private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly Progress _progress;
@@ -336,6 +358,28 @@ namespace Parallel.Worker.Interface
             catch { }
         }
 
+        /// <summary>
+        /// never throws errors from inner operation
+        /// </summary>
+        /// <param name="timeoutMS"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public new bool Wait(int timeoutMS, CancellationToken cancellationToken)
+        {
+            try
+            {
+                return base.Wait(timeoutMS, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                //exception from when the WAIT was cancelled, not the actual operation
+                throw;
+            }
+            catch { }
+            //should not occur
+            return IsDone;
+        }
+
         public void Cancel()
         {
             _cancellationTokenSource.Cancel();
@@ -387,15 +431,17 @@ namespace Parallel.Worker.Interface
     /// </summary>
     /// <typeparam name="TResult"></typeparam>
     /// <typeparam name="TProgress"></typeparam>
-    public class Future<TResult, TProgress> : Future<TResult>
+    public class Future<TResult, TProgress> : Future<TResult>, IProgressEventSource<TProgress>
         where TProgress : class
     {
+        private readonly Progress<TProgress> _progress;
 
         #region constructors
         protected Future(Func<TResult> function, CancellationTokenSource cancellationTokenSource,
                          Progress<TProgress> progress)
             : base(function, cancellationTokenSource, progress)
         {
+            _progress = progress;
         }
 
         protected Future(Func<TResult> function, CancellationTokenSource cancellationTokenSource,
@@ -403,12 +449,14 @@ namespace Parallel.Worker.Interface
                          TaskCreationOptions creationOptions)
             : base(function, cancellationTokenSource, progress, creationOptions)
         {
+            _progress = progress;
         }
 
         protected Future(Func<object, TResult> function, object state,
                          CancellationTokenSource cancellationTokenSource, Progress<TProgress> progress)
             : base(function, state, cancellationTokenSource, progress)
         {
+            _progress = progress;
         }
 
         protected Future(Func<object, TResult> function, object state,
@@ -416,6 +464,7 @@ namespace Parallel.Worker.Interface
                          TaskCreationOptions creationOptions)
             : base(function, state, cancellationTokenSource, progress, creationOptions)
         {
+            _progress = progress;
         }
         #endregion
 
@@ -447,6 +496,32 @@ namespace Parallel.Worker.Interface
             Progress<TProgress> progress = new Progress<TProgress>();
             return new Future<TResult, TProgress>(s => function(cts.Token, progress.Report, s), state, cts, progress, creationOptions);
         }
+        #endregion
+
+        #region operations
+        #region event subscription
+        //hide method
+        private new void SubscribeProgress(EventHandler<ProgressEventArgs> handler)
+        {
+            throw new NotImplementedException();
+        }
+
+        //hide method
+        private new void UnsubscribeProgress(EventHandler<ProgressEventArgs> handler)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SubscribeProgress(EventHandler<ProgressEventArgs<TProgress>> handler)
+        {
+            _progress.ProgressChanged += handler;
+        }
+
+        public void UnsubscribeProgress(EventHandler<ProgressEventArgs<TProgress>> handler)
+        {
+            _progress.ProgressChanged -= handler;
+        }
+        #endregion
         #endregion
     }
 }

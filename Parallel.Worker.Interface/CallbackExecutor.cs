@@ -23,7 +23,7 @@ namespace Parallel.Worker.Interface
         {
             Func<CancellationToken, Action, TArgument, TResult> wrapped = (ct, p, argument) =>
             {
-                ManualResetEventSlim callbackCompleted = new ManualResetEventSlim(false);
+                ManualResetEvent callbackCompleted = new ManualResetEvent(false);
                 TResult callbackResult = null;
 
                 instruction(ct, p, argument, result =>
@@ -31,7 +31,7 @@ namespace Parallel.Worker.Interface
                     callbackResult = result;
                     callbackCompleted.Set();
                 });
-                callbackCompleted.Wait();
+                callbackCompleted.WaitOne();
                 return callbackResult;
             };
             return wrapped;

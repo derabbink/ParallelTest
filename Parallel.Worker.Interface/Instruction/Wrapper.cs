@@ -8,14 +8,26 @@ namespace Parallel.Worker.Interface.Instruction
 {
     public static class Wrapper
     {
+        public static Future<TResult> Execute<TResult>(this IExecutor executor, Func<CancellationToken, Action, TResult> operation)
+            where TResult : class
+        {
+            return executor.Execute(Wrap(operation), null);
+        }
+
         /// <summary>
         /// Wraps an operation in a lambda that matches the Worker.Execute argument
         /// </summary>
-        /// <param name="operation">operation that takes no arguments</param>
+        /// <param name="operation">operation that takes no data arguments</param>
         /// <returns>operation that takes a bogus argument. supplied argument will discarded</returns>
-        public static Func<CancellationToken, object, TResult> Wrap<TResult>(Func<CancellationToken, TResult> operation) where TResult : class
+        public static Func<CancellationToken, Action, object, TResult> Wrap<TResult>(Func<CancellationToken, Action, TResult> operation) where TResult : class
         {
-            return (ct, _) => operation(ct);
+            return (ct, p, _) => operation(ct, p);
+        }
+
+        public static Future<object> Execute<TArgument>(this IExecutor executor, Action<CancellationToken, Action, TArgument> operation, TArgument argument)
+            where TArgument : class
+        {
+            return executor.Execute(Wrap(operation), argument);
         }
 
         /// <summary>
@@ -23,25 +35,30 @@ namespace Parallel.Worker.Interface.Instruction
         /// </summary>
         /// <param name="operation">operation without return value</param>
         /// <returns>operation that returns null</returns>
-        public static Func<CancellationToken, TArgument, object> Wrap<TArgument>(Action<CancellationToken, TArgument> operation) where TArgument : class
+        public static Func<CancellationToken, Action, TArgument, object> Wrap<TArgument>(Action<CancellationToken, Action, TArgument> operation) where TArgument : class
         {
-            return (ct, arg) =>
+            return (ct, p, arg) =>
             {
-                operation(ct, arg);
+                operation(ct, p, arg);
                 return null;
             };
+        }
+
+        public static Future<object> Execute(this IExecutor executor, Action<CancellationToken, Action> operation)
+        {
+            return executor.Execute(Wrap(operation), null);
         }
 
         /// <summary>
         /// Wraps an operation in a lambda that matches the Worker.Execute argument
         /// </summary>
-        /// <param name="operation">operation without argument or return value</param>
+        /// <param name="operation">operation without data argument or return value</param>
         /// <returns>operation that takes bogus argument and returns null. supplied argument will be discarded</returns>
-        public static Func<CancellationToken, object, object> Wrap(Action<CancellationToken> operation)
+        public static Func<CancellationToken, Action, object, object> Wrap(Action<CancellationToken, Action> operation)
         {
-            return (ct, _) =>
+            return (ct, p, _) =>
             {
-                operation(ct);
+                operation(ct, p);
                 return null;
             };
         }

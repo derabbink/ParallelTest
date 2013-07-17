@@ -44,7 +44,10 @@
     <Compile Include="Exceptions\CancellationException.cs" />
     <Compile Include="Instruction\CoordinatedInstruction.cs" />
     <Compile Include="Instruction\LocalInstruction.cs" />
+    <Compile Include="ITimeOutable.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TimeOutable.cs" />
+    <Compile Include="TimeOutMonitor.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Parallel.Worker.Interface\Parallel.Worker.Interface.csproj">
