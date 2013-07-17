@@ -54,6 +54,12 @@
     <Compile Include="CallbackExecutorTest.cs" />
     <Compile Include="Communication\SingleChannelCallback\ChannelTest.cs" />
     <Compile Include="ExecutorCancelTest.cs" />
+    <Compile Include="ExecutorProgressTest.cs" />
+    <Compile Include="GenericExecutorProgressTest.cs" />
+    <Compile Include="GenericTaskExecutorProgressTest.cs" />
+    <Compile Include="SingleChannelCallbackExecutorProgressTest.cs" />
+    <Compile Include="SingleChannelCallbackTaskExecutorProgressTest.cs" />
+    <Compile Include="TaskExecutorProgressTest.cs" />
     <Compile Include="ExecutorTest.cs" />
     <Compile Include="GenericExecutorCancelTest.cs" />
     <Compile Include="GenericExecutorTest.cs" />
