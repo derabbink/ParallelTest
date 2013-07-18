@@ -21,6 +21,29 @@ namespace Parallel.Coordinator.Interface
             result.Start(argument);
             return result;
         }
+
+        protected internal Coordinator(Coordinator parent)
+        {
+            Parent = parent;
+        }
+
+        protected Coordinator Parent { get; private set; }
+
+        protected bool HasParent {get { return Parent != null; }}
+
+        protected void ProcessError(Exception e)
+        {
+            ProcessErrorLocally(e);
+            if (HasParent)
+                Parent.ProcessError(e);
+            else
+                throw e;
+        }
+
+        protected virtual void ProcessErrorLocally(Exception e)
+        {
+            //by default, do nothing
+        }
     }
 
     public class Coordinator<TArgument, TResult> : Coordinator
@@ -29,15 +52,14 @@ namespace Parallel.Coordinator.Interface
     {
         private CoordinatedInstruction<TArgument, TResult> _instruction;
 
-        private Coordinator _parent;
         private Future<TResult> _result;
         private ManualResetEvent _resultBlock;
 
-        internal Coordinator(CoordinatedInstruction<TArgument, TResult> instruction, Coordinator parent)
+        protected internal Coordinator(CoordinatedInstruction<TArgument, TResult> instruction, Coordinator parent)
+            :base(parent)
         {
             _resultBlock = new ManualResetEvent(false);
             _instruction = instruction;
-            _parent = parent;
         }
 
         /// <summary>
@@ -51,7 +73,7 @@ namespace Parallel.Coordinator.Interface
                 CoordinatedInstruction<TResult, TNextResult> instruction)
             where TNextResult : class
         {
-            var nextCoordinator = new Coordinator<TResult, TNextResult>(instruction, this);
+            var nextCoordinator = new Coordinator<TResult, TNextResult>(instruction, Parent);
             nextCoordinator.Start(Result.Unwrap());
             return nextCoordinator;
         }
@@ -59,8 +81,21 @@ namespace Parallel.Coordinator.Interface
         protected internal void Start(TArgument argument)
         {
             _result = _instruction.Invoke(argument);
+            WaitOrProcessError(_result);
             _result.Wait();
             _resultBlock.Set();
+        }
+
+        private void WaitOrProcessError(Future<TResult> future)
+        {
+            try
+            {
+                future.Wait();
+            }
+            catch (Exception e)
+            {
+                ProcessError(e);
+            }
         }
 
         /// <summary>
