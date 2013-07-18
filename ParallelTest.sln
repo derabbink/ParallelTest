@@ -29,7 +29,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{C5397C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Parallel.Worker.Test", "Parallel.Worker.Test\Parallel.Worker.Test.csproj", "{1FB38395-D4EF-46AB-8E8E-A465D21C6231}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Parallel.Coordinator.Interface.Test", "Prallel.Coordinator.Interface.Test\Parallel.Coordinator.Interface.Test.csproj", "{27229AA8-6764-4970-AB7F-D2F86741E114}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Parallel.Coordinator.Interface.Test", "Parallel.Coordinator.Interface.Test\Parallel.Coordinator.Interface.Test.csproj", "{27229AA8-6764-4970-AB7F-D2F86741E114}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Parallel.Coordinator.Test", "Parallel.Coordinator.Test\Parallel.Coordinator.Test.csproj", "{66025CA7-8A8F-4FA9-8D91-9B07D3A8D53B}"
 EndProject
