@@ -53,10 +53,17 @@ namespace Parallel.Worker.Test
         {
             var expectedException = new Exception("Expected");
             Future<object> future = _failureExecutor.Execute(_throw, expectedException);
-            future.Wait();
+            try
+            {
+                future.Wait();
+            }
+            catch (AggregateException e)
+            {
+                //double layer of AggregateException, since between (remote)
+                // invoke and callback, there is a nested future
+                Assert.That(e.InnerException.InnerException, Is.SameAs(expectedException));
+            }
             Assert.That(future.IsFaulted, Is.True);
-            //double layer of AggregateException, since between (remote)
-            // invoke and callback, there is a nested future
             Assert.That(future.Exception.InnerException.InnerException, Is.SameAs(expectedException));
         }
 

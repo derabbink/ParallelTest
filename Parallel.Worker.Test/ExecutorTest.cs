@@ -58,7 +58,13 @@ namespace Parallel.Worker.Test
         {
             var expected = _argumentFailure;
             var future = _executor.Execute(_throw, _argumentFailure);
-            future.Wait();
+            try {
+                future.Wait();
+            }
+            catch (AggregateException e)
+            {
+                Assert.That(e.InnerException, Is.SameAs(expected));
+            }
             Assert.That(future.IsFaulted, Is.True);
             Assert.That(future.Exception.InnerException, Is.SameAs(expected));
         }

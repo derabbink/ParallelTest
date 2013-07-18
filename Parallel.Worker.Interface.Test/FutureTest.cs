@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using NUnit.Framework;
 
 namespace Parallel.Worker.Interface.Test
@@ -45,7 +46,13 @@ namespace Parallel.Worker.Interface.Test
             _notifyOperation.Wait();
             future.Cancel();
             _holdOperation.Set();
-            future.Wait();
+            try {
+                future.Wait();
+            }
+            catch (AggregateException e)
+            {
+                Assert.That(e.InnerException, Is.TypeOf<TaskCanceledException>());
+            }
 
             Assert.That(future.IsCanceled, Is.True);
         }
@@ -58,7 +65,14 @@ namespace Parallel.Worker.Interface.Test
             _notifyOperation.Wait();
             future.Cancel();
             _holdOperation.Set();
-            future.Wait();
+            try
+            {
+                future.Wait();
+            }
+            catch (AggregateException e)
+            {
+                Assert.That(e.InnerException, Is.TypeOf<TaskCanceledException>());
+            }
 
             Assert.That(future.IsCanceled, Is.True);
         }

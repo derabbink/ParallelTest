@@ -66,8 +66,16 @@ namespace Parallel.Worker.Test
         [Test]
         public void SequentialCancellationFailure()
         {
+            var expected = _argumentFailure;
             Future<object> future = _executor.Execute(_throw, _argumentFailure);
-            future.Wait();
+            try
+            {
+                future.Wait();
+            }
+            catch (AggregateException e)
+            {
+                Assert.That(e.InnerException, Is.SameAs(expected));
+            }
             future.Cancel();
             Assert.That(future.IsCompleted, Is.True);
         }
@@ -80,7 +88,14 @@ namespace Parallel.Worker.Test
             _instructionNotifyingEvent.Wait();
             future.Cancel();
             //wait for cancel to be processed
-            future.Wait();
+            try
+            {
+                future.Wait();
+            }
+            catch (AggregateException e)
+            {
+                Assert.That(e.InnerException, Is.TypeOf<TaskCanceledException>());
+            }
             Assert.That(future.IsCanceled, Is.True);
         }
 
@@ -92,7 +107,14 @@ namespace Parallel.Worker.Test
             _instructionNotifyingEvent.Wait();
             future.Cancel();
             //wait for cancel to be processed
-            future.Wait();
+            try
+            {
+                future.Wait();
+            }
+            catch (AggregateException e)
+            {
+                Assert.That(e.InnerException, Is.TypeOf<TaskCanceledException>());
+            }
             Assert.That(future.IsCanceled, Is.True);
         }
         #endregion
@@ -111,7 +133,15 @@ namespace Parallel.Worker.Test
             var futures = new[] {future1, future2};
             Future<object>.CancelAll(futures);
             //wait for cancel to be processed
-            Future<object>.WaitAll(futures);
+            try
+            {
+                Future<object>.WaitAll(futures);
+            }
+            catch (AggregateException e)
+            {
+                Assert.That(e.InnerExceptions[0].InnerException, Is.TypeOf<TaskCanceledException>());
+                Assert.That(e.InnerExceptions[1].InnerException, Is.TypeOf<TaskCanceledException>());
+            }
 
             Assert.That(future1.IsCompleted, Is.True);
             Assert.That(future2.IsCompleted, Is.True);

@@ -89,40 +89,6 @@ namespace Parallel.Worker.Interface
         #endregion
 
         #region operations
-        /// <summary>
-        /// never throws errors from inner operation
-        /// </summary>
-        public new void Wait()
-        {
-            try
-            {
-                base.Wait();
-            }
-            catch {}
-        }
-
-        /// <summary>
-        /// never throws errors from inner operation
-        /// </summary>
-        /// <param name="timeoutMS"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        public new bool Wait(int timeoutMS, CancellationToken cancellationToken)
-        {
-            try
-            {
-                return base.Wait(timeoutMS, cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                //exception from when the WAIT was cancelled, not the actual operation
-                throw;
-            }
-            catch {}
-            //should not occur
-            return IsDone;
-        }
-
         public void Cancel()
         {
             _cancellationTokenSource.Cancel();
@@ -155,14 +121,34 @@ namespace Parallel.Worker.Interface
         #region static helper methods
         public static void WaitAll(IEnumerable<Future> futures)
         {
+            IList<Exception> exceptions = new List<Exception>();
             foreach (Future f in futures)
-                f.Wait();
+                try
+                {
+                    f.Wait();
+                }
+                catch (Exception e)
+                {
+                    exceptions.Add(e);
+                }
+            if (exceptions.Any())
+                throw new AggregateException(exceptions);
         }
 
         public static void CancelAll(IEnumerable<Future> futures)
         {
+            IList<Exception> exceptions = new List<Exception>();
             foreach (Future f in futures)
-                f.Cancel();
+                try
+                {
+                    f.Cancel();
+                }
+                catch (Exception e)
+                {
+                    exceptions.Add(e);
+                }
+            if (exceptions.Any())
+                throw new AggregateException(exceptions);
         }
         #endregion
     }
@@ -346,40 +332,6 @@ namespace Parallel.Worker.Interface
         #endregion
 
         #region operations
-        /// <summary>
-        /// never throws errors from inner operation
-        /// </summary>
-        public new void Wait()
-        {
-            try
-            {
-                base.Wait();
-            }
-            catch { }
-        }
-
-        /// <summary>
-        /// never throws errors from inner operation
-        /// </summary>
-        /// <param name="timeoutMS"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        public new bool Wait(int timeoutMS, CancellationToken cancellationToken)
-        {
-            try
-            {
-                return base.Wait(timeoutMS, cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                //exception from when the WAIT was cancelled, not the actual operation
-                throw;
-            }
-            catch { }
-            //should not occur
-            return IsDone;
-        }
-
         public void Cancel()
         {
             _cancellationTokenSource.Cancel();
@@ -414,14 +366,34 @@ namespace Parallel.Worker.Interface
         #region static helper methods
         public static void WaitAll(IEnumerable<Future<TResult>> futures)
         {
+            IList<Exception> exceptions = new List<Exception>();
             foreach (Future<TResult> f in futures)
-                f.Wait();
+                try
+                {
+                    f.Wait();
+                }
+                catch (Exception e)
+                {
+                    exceptions.Add(e);
+                }
+            if (exceptions.Any())
+                throw new AggregateException(exceptions);
         }
 
         public static void CancelAll(IEnumerable<Future<TResult>> futures)
         {
+            IList<Exception> exceptions = new List<Exception>();
             foreach (Future<TResult> f in futures)
-                f.Cancel();
+                try
+                {
+                    f.Cancel();
+                }
+                catch (Exception e)
+                {
+                    exceptions.Add(e);
+                }
+            if (exceptions.Any())
+                throw new AggregateException(exceptions);
         }
         #endregion
     }
