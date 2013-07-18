@@ -16,8 +16,6 @@ namespace Prallel.Coordinator.Interface.Test
         private IExecutor _executor;
         private Func<CancellationToken, Action, object, object> _identity;
         private CoordinatedInstruction<object, object> _identityInstr;
-        private Func<CancellationToken, Action, Future<object>, object> _unwrap;
-        private CoordinatedInstruction<Future<object>, object> _unwrapInstr;
         private object _identityArgument;
 
         #region setup
@@ -27,8 +25,6 @@ namespace Prallel.Coordinator.Interface.Test
             _executor = new TaskExecutor();
             _identity = (_, p, a) => a;
             _identityInstr = new CoordinatedInstruction<object, object>(_executor, _identity);
-            _unwrap = (_, p, f) => f.Unwrap();
-            _unwrapInstr = new CoordinatedInstruction<Future<object>, object>(_executor, _unwrap);
             _identityArgument = new object();
         }
         #endregion
@@ -50,7 +46,7 @@ namespace Prallel.Coordinator.Interface.Test
         {
             var expected = _identityArgument;
             var coordinator = Parallel.Coordinator.Interface.Coordinator.Do(_identityInstr, _identityArgument)
-                .ThenDo(_unwrapInstr);
+                .ThenDo(_identityInstr);
             var actual = coordinator.Result;
             Assert.That(actual.IsDone, Is.True);
             Assert.That(actual.Result, Is.SameAs(expected));
@@ -61,8 +57,8 @@ namespace Prallel.Coordinator.Interface.Test
         {
             var expected = _identityArgument;
             var coordinator = Parallel.Coordinator.Interface.Coordinator.Do(_identityInstr, _identityArgument)
-                .ThenDo(_unwrapInstr)
-                .ThenDo(_unwrapInstr);
+                .ThenDo(_identityInstr)
+                .ThenDo(_identityInstr);
             var actual = coordinator.Result;
             Assert.That(actual.IsDone, Is.True);
             Assert.That(actual.Result, Is.SameAs(expected));

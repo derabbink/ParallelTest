@@ -10,32 +10,34 @@ using Parallel.Worker.Interface.Instruction;
 
 namespace Parallel.Coordinator.Interface
 {
-    public static class Coordinator
+    public abstract class Coordinator
     {
         public static Coordinator<TArgument, TResult> Do<TArgument, TResult>(CoordinatedInstruction<TArgument, TResult> instruction,
                                                                              TArgument argument)
             where TArgument : class
             where TResult : class
         {
-            var result = new Coordinator<TArgument, TResult>(instruction);
+            var result = new Coordinator<TArgument, TResult>(instruction, null);
             result.Start(argument);
             return result;
         }
     }
 
-    public class Coordinator<TArgument, TResult>
+    public class Coordinator<TArgument, TResult> : Coordinator
         where TArgument : class
         where TResult : class
     {
         private CoordinatedInstruction<TArgument, TResult> _instruction;
 
+        private Coordinator _parent;
         private Future<TResult> _result;
         private ManualResetEvent _resultBlock;
 
-        public Coordinator(CoordinatedInstruction<TArgument, TResult> instruction)
+        internal Coordinator(CoordinatedInstruction<TArgument, TResult> instruction, Coordinator parent)
         {
             _resultBlock = new ManualResetEvent(false);
             _instruction = instruction;
+            _parent = parent;
         }
 
         /// <summary>
@@ -45,12 +47,12 @@ namespace Parallel.Coordinator.Interface
         /// <typeparam name="TNextResult"></typeparam>
         /// <param name="instruction">Must consume the result type of the previous instruction</param>
         /// <returns></returns>
-        public Coordinator<Future<TResult>, TNextResult> ThenDo<TNextResult>(
-                CoordinatedInstruction<Future<TResult>, TNextResult> instruction)
+        public Coordinator<TResult, TNextResult> ThenDo<TNextResult>(
+                CoordinatedInstruction<TResult, TNextResult> instruction)
             where TNextResult : class
         {
-            var nextCoordinator = new Coordinator<Future<TResult>, TNextResult>(instruction);
-            nextCoordinator.Start(Result);
+            var nextCoordinator = new Coordinator<TResult, TNextResult>(instruction, this);
+            nextCoordinator.Start(Result.Unwrap());
             return nextCoordinator;
         }
 
