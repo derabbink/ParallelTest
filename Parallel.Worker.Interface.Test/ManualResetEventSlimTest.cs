@@ -11,14 +11,14 @@ namespace Parallel.Worker.Interface.Test
     [TestFixture]
     public class ManualResetEventSlimTest
     {
-        private ManualResetEventSlim _mresNotify;
-        private ManualResetEventSlim _mresHold;
+        private ManualResetEventSlim _notifyOperation;
+        private ManualResetEventSlim _holdOperation;
 
         [SetUp]
         public void Setup()
         {
-            _mresNotify = new ManualResetEventSlim(false);
-            _mresHold = new ManualResetEventSlim(false);
+            _notifyOperation = new ManualResetEventSlim(false);
+            _holdOperation = new ManualResetEventSlim(false);
         }
 
         [Test]
@@ -28,13 +28,14 @@ namespace Parallel.Worker.Interface.Test
             CancellationTokenSource cts = new CancellationTokenSource();
             Task t = Task.Factory.StartNew(() =>
                 {
-                    _mresNotify.Set();
+                    _notifyOperation.Set();
                     Thread.Sleep(1000);
                     cts.Cancel();
                 });
-            _mresNotify.Wait();
+            _notifyOperation.Wait();
             Assert.That(cts.Token.IsCancellationRequested, Is.False);
-            _mresHold.Wait(cts.Token);
+            //this will throw the expected exception
+            _holdOperation.Wait(cts.Token);
         }
     }
 }

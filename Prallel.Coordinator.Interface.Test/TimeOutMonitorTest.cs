@@ -58,7 +58,7 @@ namespace Prallel.Coordinator.Interface.Test
         [Test]
         public void TooLongOperationIsDiscovered()
         {
-            int anyTimeOut = 1;
+            int anyTimeOut = 0;
             //_passThroughOperation will not continue
             var monitorTarget = TimeOutable.FromFuture(_executor.Execute(_passThroughOperation));
             Task<bool> checkWaitTask = Task.Factory.StartNew(() =>
@@ -74,9 +74,10 @@ namespace Prallel.Coordinator.Interface.Test
         [Test]
         public void CompletedOperationPassesThrough()
         {
-            int anyTimeOut = 1;
+            int anyTimeOut = 0;
             Future<object> future = _executor.Execute(_passThroughOperation);
             var monitorTarget = TimeOutable.FromFuture(future);
+            _holdPassThroughOperation.Set();
             future.Wait();
             Assert.That(future.IsCompleted, Is.True);
 
@@ -87,7 +88,7 @@ namespace Prallel.Coordinator.Interface.Test
             checkWaitTask.Wait();
 
             Assert.That(checkWaitTask.IsCompleted, Is.True);
-            Assert.That(checkWaitTask.Result, Is.False);
+            Assert.That(checkWaitTask.Result, Is.True);
         }
 
         [Test]
@@ -98,7 +99,7 @@ namespace Prallel.Coordinator.Interface.Test
             var monitorTarget = TimeOutable.FromFuture(future);
             Task<bool> checkWaitTask = Task.Factory.StartNew(() =>
                 {
-                    return TimeOutMonitor.MonitoredWait(monitorTarget, iterationWait +50);
+                    return TimeOutMonitor.MonitoredWait(monitorTarget, iterationWait+50);
                 });
             for (int i = 0; i < heartbeatCount; i++)
             {
@@ -106,7 +107,6 @@ namespace Prallel.Coordinator.Interface.Test
                 Thread.Sleep(iterationWait);
                 _holdRepeatingOperation.Set();
             }
-            _holdRepeatingOperation.Set();
             checkWaitTask.Wait();
 
             Assert.That(checkWaitTask.IsCompleted, Is.True);

@@ -54,6 +54,7 @@
     <Compile Include="CoordinatorTest.cs" />
     <Compile Include="DateTimeBehaviorTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TaskCancellationTest.cs" />
     <Compile Include="TimeOutMonitorTest.cs" />
   </ItemGroup>
   <ItemGroup>

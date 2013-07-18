@@ -18,13 +18,16 @@ namespace Parallel.Coordinator.Interface
 
         public static bool MonitoredWait(ITimeOutable target, int timeoutMS, CancellationToken cancellationToken)
         {
+            if (target.Wait(0, cancellationToken))
+                return true;
+
             DateTime begin = DateTime.Now;
             EventHandler<ProgressEventArgs> handler = (sender, args) => begin = DateTime.Now;
             target.SubscribeProgress(handler);
 
             Task<bool> monitoringTask = Task.Factory.StartNew(() =>
                 {
-                    while (begin.AddMilliseconds(timeoutMS) < DateTime.Now)
+                    while (begin.AddMilliseconds(timeoutMS) > DateTime.Now)
                     {
                         if (target.Wait(timeoutMS, cancellationToken))
                             return true;

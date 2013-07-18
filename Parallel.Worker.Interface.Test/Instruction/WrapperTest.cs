@@ -12,13 +12,15 @@ namespace Parallel.Worker.Interface.Test.Instruction
     public class WrapperTest
     {
         private CancellationTokenSource _cancellationTokenSource;
+        private Action _progress ;
 
-        #region setup
+            #region setup
 
         [SetUp]
         public void Setup()
         {
             _cancellationTokenSource = new CancellationTokenSource();
+            _progress = () => { };
         }
 
         #endregion
@@ -30,9 +32,9 @@ namespace Parallel.Worker.Interface.Test.Instruction
         {
             object arg = null;
             object expected = new object();
-            Func<CancellationToken, object> testable = _ => expected;
+            Func<CancellationToken, Action, object> testable = (_, p) => expected;
             var wrapped = Wrapper.Wrap(testable);
-            var actual = wrapped(_cancellationTokenSource.Token, arg);
+            var actual = wrapped(_cancellationTokenSource.Token, _progress, arg);
             Assert.That(actual, Is.SameAs(expected));
         }
 
@@ -41,9 +43,9 @@ namespace Parallel.Worker.Interface.Test.Instruction
         {
             object actual = null;
             object expected = new object();
-            Action<CancellationToken, object> testable = (_, o) => actual = o;
+            Action<CancellationToken, Action, object> testable = (_, p, o) => actual = o;
             var wrapped = Wrapper.Wrap(testable);
-            wrapped(_cancellationTokenSource.Token, expected);
+            wrapped(_cancellationTokenSource.Token, _progress, expected);
             Assert.That(actual, Is.SameAs(expected));
         }
 
@@ -53,9 +55,9 @@ namespace Parallel.Worker.Interface.Test.Instruction
             object arg = null;
             object actual = null;
             object expected = new object();
-            Action<CancellationToken> testable = _ => actual = expected;
+            Action<CancellationToken, Action> testable = (_, p) => actual = expected;
             var wrapped = Wrapper.Wrap(testable);
-            wrapped(_cancellationTokenSource.Token, arg);
+            wrapped(_cancellationTokenSource.Token, _progress, arg);
             Assert.That(actual, Is.SameAs(expected));
         }
 

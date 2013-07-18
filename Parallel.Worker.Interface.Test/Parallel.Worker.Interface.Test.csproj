@@ -64,6 +64,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EventHandlerSelfUnsubscribeTest.cs" />
+    <Compile Include="FutureTest.cs" />
     <Compile Include="Instruction\WrapperTest.cs" />
     <Compile Include="ManualResetEventSlimTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
