@@ -64,7 +64,7 @@ namespace Parallel.Worker.Interface.Test
             future.Start();
             _notifyOperation.Wait();
             future.Cancel();
-            _holdOperation.Set();
+            //_holdOperation.Set();
             try
             {
                 future.Wait();

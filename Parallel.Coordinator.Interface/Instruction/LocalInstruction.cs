@@ -20,5 +20,10 @@ namespace Parallel.Coordinator.Interface.Instruction
             : base(new TaskExecutor<TArgument, TResult>(), instruction) //generics are optional
         {
         }
+
+        public LocalInstruction(Func<CancellationToken, Action, TArgument, TResult> instruction, int timeout)
+            : base(new TaskExecutor<TArgument, TResult>(), instruction, timeout) //generics are optional
+        {
+        }
     }
 }

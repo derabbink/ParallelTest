@@ -17,10 +17,12 @@ namespace Parallel.Coordinator.Interface
             where TArgument : class
             where TResult : class
         {
-            var result = new Coordinator<TArgument, TResult>(instruction, null);
+            var result = new Coordinator<TArgument, TResult>(instruction);
             result.Start(argument);
             return result;
         }
+
+        protected internal Coordinator() : this(null) {}
 
         protected internal Coordinator(Coordinator parent)
         {
@@ -55,6 +57,8 @@ namespace Parallel.Coordinator.Interface
         private Future<TResult> _result;
         private ManualResetEvent _resultBlock;
 
+        protected internal Coordinator(CoordinatedInstruction<TArgument, TResult> instruction) : this(instruction, null) { }
+
         protected internal Coordinator(CoordinatedInstruction<TArgument, TResult> instruction, Coordinator parent)
             :base(parent)
         {
@@ -80,17 +84,17 @@ namespace Parallel.Coordinator.Interface
 
         protected internal void Start(TArgument argument)
         {
-            _result = _instruction.Invoke(argument);
-            WaitOrProcessError(_result);
-            _result.Wait();
+            WaitOrProcessError(argument);
             _resultBlock.Set();
         }
 
-        private void WaitOrProcessError(Future<TResult> future)
+        private void WaitOrProcessError(TArgument argument)
         {
             try
             {
-                future.Wait();
+                _result = _instruction.InvokeAndWait(argument);
+                //tease out any exceptions
+                _result.Wait();
             }
             catch (Exception e)
             {
