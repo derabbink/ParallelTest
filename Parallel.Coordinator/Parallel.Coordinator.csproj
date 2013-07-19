@@ -41,6 +41,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Coordinator2.cs" />
+    <Compile Include="Instruction\ParallelInstruction.cs" />
     <Compile Include="Instruction\ParallelInstruction2.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
