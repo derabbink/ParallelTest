@@ -41,6 +41,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Coordinator2.cs" />
+    <Compile Include="Coordinator3.cs" />
+    <Compile Include="Instruction\ParallelInstruction8.cs" />
+    <Compile Include="Instruction\ParallelInstruction7.cs" />
+    <Compile Include="Instruction\ParallelInstruction6.cs" />
+    <Compile Include="Instruction\ParallelInstruction5.cs" />
+    <Compile Include="Instruction\ParallelInstruction4.cs" />
+    <Compile Include="Instruction\ParallelInstruction3.cs" />
     <Compile Include="Instruction\ParallelInstruction.cs" />
     <Compile Include="Instruction\ParallelInstruction2.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
