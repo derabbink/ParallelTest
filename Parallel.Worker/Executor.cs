@@ -15,6 +15,13 @@ namespace Parallel.Worker
     /// </summary>
     public class Executor : IExecutor
     {
+        public Future<TResult> Execute<TArgument, TResult>(CancellationToken cancellationToken, Func<CancellationToken, Action, TArgument, TResult> instruction, TArgument argument)
+            where TArgument : class
+            where TResult : class
+        {
+            return ExecuteGeneric(cancellationToken, instruction, argument, ApplyArgument, CompleteFuture);
+        }
+
         /// <summary>
         /// Executes the instruction and returns a future representing the result
         /// </summary>
@@ -23,11 +30,27 @@ namespace Parallel.Worker
         /// <param name="instruction"></param>
         /// <param name="argument"></param>
         /// <returns></returns>
+        [Obsolete("Overload that takes a CancellationToken is recommended", false)]
         public Future<TResult> Execute<TArgument, TResult>(Func<CancellationToken, Action, TArgument, TResult> instruction, TArgument argument)
             where TArgument : class
             where TResult : class
         {
             return ExecuteGeneric(instruction, argument, ApplyArgument, CompleteFuture);
+        }
+
+        internal static Future<TResult> ExecuteGeneric<TArgument, TResult>(
+                CancellationToken cancellationToken,
+                Func<CancellationToken, Action, TArgument, TResult> instruction,
+                TArgument argument,
+                Func<Func<CancellationToken, Action, TArgument, TResult>, TArgument, Func<CancellationToken, Action, TResult>> applyArgument,
+                Action<Future<TResult>> completeFuture)
+            where TArgument : class
+            where TResult : class
+        {
+            Func<CancellationToken, Action, TResult> safeInstruction = applyArgument(instruction, argument);
+            Future<TResult> future = Future<TResult>.Create(cancellationToken, safeInstruction);
+            completeFuture(future);
+            return future;
         }
 
         internal static Future<TResult> ExecuteGeneric<TArgument, TResult>(
@@ -95,6 +118,11 @@ namespace Parallel.Worker
         where TArgument : class
         where TResult : class
     {
+        public Future<TResult> Execute(CancellationToken cancellationToken, Func<CancellationToken, Action, TArgument, TResult> instruction, TArgument argument)
+        {
+            return Executor.ExecuteGeneric(cancellationToken, instruction, argument, ApplyArgument, CompleteFuture);
+        }
+
         /// <summary>
         /// Executes the instruction and returns a completed future.
         /// </summary>

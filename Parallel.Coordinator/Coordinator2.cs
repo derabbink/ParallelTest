@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using Parallel.Coordinator.Instruction;
 using Parallel.Coordinator.Interface;
 using Parallel.Coordinator.Interface.Instruction;
@@ -19,6 +21,18 @@ namespace Parallel.Coordinator
             where TResult2 : class
         {
             return Interface.Coordinator.Do(ComposeInstruction(instruction1, instruction2), argument);
+        }
+
+        public static Coordinator<TArgument, Tuple<TResult1, TResult2>> Do<TArgument, TResult1, TResult2>
+            (CancellationToken cancellationToken,
+             CoordinatedInstruction<TArgument, TResult1> instruction1,
+             CoordinatedInstruction<TArgument, TResult2> instruction2,
+             TArgument argument)
+            where TArgument : class
+            where TResult1 : class
+            where TResult2 : class
+        {
+            return Interface.Coordinator.Do(cancellationToken, ComposeInstruction(instruction1, instruction2), argument);
         }
 
         public static Coordinator<TResult, Tuple<TNextResult1, TNextResult2>> ThenDo

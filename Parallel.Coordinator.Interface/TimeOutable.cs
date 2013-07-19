@@ -25,7 +25,7 @@ namespace Parallel.Coordinator.Interface
             return Compose(future, future, future);
         }
 
-        public abstract bool Wait(int timeoutMS, CancellationToken cancellationToken);
+        public abstract bool Wait(int timeoutMS);
         public abstract void Cancel();
         public abstract void SubscribeProgress(EventHandler<ProgressEventArgs> handler);
         public abstract void UnsubscribeProgress(EventHandler<ProgressEventArgs> handler);
@@ -44,9 +44,9 @@ namespace Parallel.Coordinator.Interface
             _progressEventSource = progressEventSource;
         }
 
-        public override bool Wait(int timeoutMS, CancellationToken cancellationToken)
+        public override bool Wait(int timeoutMS)
         {
-            return _awaitable.Wait(timeoutMS, cancellationToken);
+            return _awaitable.Wait(timeoutMS);
         }
 
         public override void Cancel()

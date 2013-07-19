@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -28,8 +29,7 @@ namespace Parallel.Coordinator.Interface.Instruction
         private IExecutor _executor;
         private IExecutor<TArgument, TResult> _executorGeneric;
         private Func<CancellationToken, Action, TArgument, TResult> _instruction;
-        private int _timeout;
-
+        
         public CoordinatedInstruction(IExecutor executor, Func<CancellationToken, Action, TArgument, TResult> instruction)
             : this(executor, instruction, CoordinatedInstruction.DefaultTimeout)
         {
@@ -40,7 +40,7 @@ namespace Parallel.Coordinator.Interface.Instruction
             _executor = executor;
             _executorGeneric = null;
             _instruction = instruction;
-            _timeout = timeoutMS;
+            Timeout = timeoutMS;
         }
 
         public CoordinatedInstruction(IExecutor<TArgument, TResult> executor, Func<CancellationToken, Action, TArgument, TResult> instruction)
@@ -53,21 +53,23 @@ namespace Parallel.Coordinator.Interface.Instruction
             _executor = null;
             _executorGeneric = executor;
             _instruction = instruction;
-            _timeout = timeoutMS;
+            Timeout = timeoutMS;
         }
+
+        public int Timeout { get; private set; }
 
         private bool IsGeneric { get { return _executor == null; } }
 
         /// <summary>
         /// Invokes this instruction under (timeout) supervision
         /// </summary>
+        /// <param name="cancellationToken"></param>
         /// <param name="argument"></param>
         /// <returns>A future that IsDone or IsCanceled</returns>
-        public Future<TResult> InvokeAndWait(TArgument argument)
+        public Future<TResult> InvokeAndWait(CancellationToken cancellationToken, TArgument argument)
         {
-            CancellationTokenSource cts = new CancellationTokenSource();
             Action doNothing = () => {};
-            return InvokeAndWait(cts.Token, doNothing, argument);
+            return InvokeAndWait(cancellationToken, doNothing, argument);
         }
 
         /// <summary>
@@ -77,44 +79,38 @@ namespace Parallel.Coordinator.Interface.Instruction
         /// <param name="progressListener"></param>
         /// <param name="argument"></param>
         /// <returns>A future that IsDone or IsCanceled</returns>
+        /// <exception cref="AggregateException">Originating from the resulting Future's Wait()</exception>
         public Future<TResult> InvokeAndWait(CancellationToken cancellationToken, Action progressListener, TArgument argument)
         {
-            var future = Invoke(argument);
-            
-            if (cancellationToken.IsCancellationRequested)
-                future.Cancel();
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var future = Invoke(cancellationToken, argument);
             cancellationToken.Register(future.Cancel);
+
             EventHandler<ProgressEventArgs> progressHandler = (sender, args) => progressListener();
             future.SubscribeProgress(progressHandler);
 
-            if (!TimeOutMonitor.MonitoredWait(future, _timeout))
-            {
+            if (!TimeOutMonitor.MonitoredWait(future, Timeout))
                 future.Cancel();
-                //tease out meaningful Exception
-                try { future.Wait(); }
-                catch (AggregateException e)
-                {
-                    //avoid encapsulating ACTUAL exception in layers of AggregateException
-                    if (e.InnerException is TaskCanceledException)
-                        throw new TimeoutException("Instruction timed out, and was canceled because of that.", e.InnerException);
-                    else if (e.InnerException is TimeoutException)
-                        throw e.InnerException;
-                    throw;
-                }
-                finally { future.UnsubscribeProgress(progressHandler); }
-            }
+
+            try { future.Wait(); }
+            finally { future.UnsubscribeProgress(progressHandler); }
             
-            future.UnsubscribeProgress(progressHandler);
             //future IsDone or IsCanceled
             return future;
         }
 
-        private Future<TResult> Invoke(TArgument argument)
+        /// <summary>
+        /// </summary>
+        /// <param name="cancellationToken">since executor.execute might block, we pass in a cancellation token</param>
+        /// <param name="argument"></param>
+        /// <returns></returns>
+        private Future<TResult> Invoke(CancellationToken cancellationToken, TArgument argument)
         {
             if (IsGeneric)
-                return _executorGeneric.Execute(_instruction, argument);
+                return _executorGeneric.Execute(cancellationToken, _instruction, argument);
             else
-                return _executor.Execute(_instruction, argument);
+                return _executor.Execute(cancellationToken, _instruction, argument);
         }
     }
 }

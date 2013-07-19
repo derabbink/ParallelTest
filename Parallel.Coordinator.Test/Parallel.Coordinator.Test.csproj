@@ -55,9 +55,21 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Parallel.Coordinator.Interface\Parallel.Coordinator.Interface.csproj">
+      <Project>{99F77D0E-A814-4E9F-A3FC-3D98C31F3F46}</Project>
+      <Name>Parallel.Coordinator.Interface</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Parallel.Coordinator\Parallel.Coordinator.csproj">
       <Project>{34B05A59-2A94-4235-B843-4E0987BB6C2A}</Project>
       <Name>Parallel.Coordinator</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Parallel.Worker.Interface\Parallel.Worker.Interface.csproj">
+      <Project>{68F1AFE5-1B89-4BC4-BD0C-89D3FFF13485}</Project>
+      <Name>Parallel.Worker.Interface</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Parallel.Worker\Parallel.Worker.csproj">
+      <Project>{7D0604EB-CDEC-495E-BDA7-7A5E34DA5B3D}</Project>
+      <Name>Parallel.Worker</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

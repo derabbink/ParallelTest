@@ -17,12 +17,12 @@ namespace Parallel.Coordinator.Interface.Instruction
         where TResult : class
     {
         public LocalInstruction(Func<CancellationToken, Action, TArgument, TResult> instruction)
-            : base(new TaskExecutor<TArgument, TResult>(), instruction) //generics are optional
+            : base(new Executor<TArgument, TResult>(), instruction) //generics are optional
         {
         }
 
         public LocalInstruction(Func<CancellationToken, Action, TArgument, TResult> instruction, int timeout)
-            : base(new TaskExecutor<TArgument, TResult>(), instruction, timeout) //generics are optional
+            : base(new Executor<TArgument, TResult>(), instruction, timeout) //generics are optional
         {
         }
     }

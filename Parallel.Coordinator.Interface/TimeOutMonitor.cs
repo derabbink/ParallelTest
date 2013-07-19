@@ -23,46 +23,15 @@ namespace Parallel.Coordinator.Interface
 
         public static bool MonitoredWait(ITimeOutable target, int timeoutMS)
         {
-            CancellationTokenSource cts = new CancellationTokenSource();
-            return MonitoredWait(target, timeoutMS, cts.Token);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="target"></param>
-        /// <param name="timeoutMS"></param>
-        /// <param name="cancellationToken">for cancelling the MonitoredWait operation</param>
-        /// <returns></returns>
-        public static bool MonitoredWait(Future target, int timeoutMS, CancellationToken cancellationToken)
-        {
-            return MonitoredWait(TimeOutable.FromFuture(target), timeoutMS, cancellationToken);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <typeparam name="TResult"></typeparam>
-        /// <param name="target"></param>
-        /// <param name="timeoutMS"></param>
-        /// <param name="cancellationToken">for cancelling the MonitoredWait operation</param>
-        /// <returns></returns>
-        public static bool MonitoredWait<TResult>(Future<TResult> target, int timeoutMS, CancellationToken cancellationToken)
-        {
-            return MonitoredWait(TimeOutable.FromFuture(target), timeoutMS, cancellationToken);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="target"></param>
-        /// <param name="timeoutMS"></param>
-        /// <param name="cancellationToken">for cancelling the MonitoredWait operation</param>
-        /// <returns></returns>
-        public static bool MonitoredWait(ITimeOutable target, int timeoutMS, CancellationToken cancellationToken)
-        {
-            if (target.Wait(0, cancellationToken))
-                return true;
+            try
+            {
+                if (timeoutMS == -1)
+                    try { return target.Wait(timeoutMS); }
+                    catch { return false; }
+                if (target.Wait(0))
+                    return true;
+            }
+            catch {/*swallow exceptions*/}
 
             DateTime begin = DateTime.Now;
             EventHandler<ProgressEventArgs> handler = (sender, args) => begin = DateTime.Now;
@@ -76,7 +45,7 @@ namespace Parallel.Coordinator.Interface
                         var completedInTime = true;
                         try
                         {
-                            completedInTime = target.Wait(timeoutMS, cancellationToken);
+                            completedInTime = target.Wait(timeoutMS);
                         }
                         catch
                         {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -12,24 +13,39 @@ namespace Parallel.Coordinator.Interface
 {
     public abstract class Coordinator
     {
-        public static Coordinator<TArgument, TResult> Do<TArgument, TResult>(CoordinatedInstruction<TArgument, TResult> instruction,
+        public static Coordinator<TArgument, TResult> Do<TArgument, TResult>(CoordinatedInstruction<TArgument, TResult>
+                                                                                 instruction,
                                                                              TArgument argument)
             where TArgument : class
             where TResult : class
         {
-            var result = new Coordinator<TArgument, TResult>(instruction);
+            CancellationTokenSource cts = new CancellationTokenSource();
+            return Do(cts.Token, instruction, argument);
+        }
+
+        public static Coordinator<TArgument, TResult> Do<TArgument, TResult>(CancellationToken cancellationToken,
+                                                                             CoordinatedInstruction<TArgument, TResult>
+                                                                                 instruction,
+                                                                             TArgument argument)
+            where TArgument : class
+            where TResult : class
+        {
+            var result = new Coordinator<TArgument, TResult>(cancellationToken, instruction);
             result.Start(argument);
             return result;
         }
 
-        protected internal Coordinator() : this(null) {}
+        protected internal Coordinator(CancellationToken cancellationToken) : this(cancellationToken, null) {}
 
-        protected internal Coordinator(Coordinator parent)
+        protected internal Coordinator(CancellationToken cancellationToken, Coordinator parent)
         {
             Parent = parent;
+            CancellationToken = cancellationToken;
         }
 
         protected Coordinator Parent { get; private set; }
+
+        protected CancellationToken CancellationToken { get; private set; }
 
         protected bool HasParent {get { return Parent != null; }}
 
@@ -57,10 +73,10 @@ namespace Parallel.Coordinator.Interface
         private Future<TResult> _result;
         private ManualResetEvent _resultBlock;
 
-        protected internal Coordinator(CoordinatedInstruction<TArgument, TResult> instruction) : this(instruction, null) { }
+        protected internal Coordinator(CancellationToken cancellationToken, CoordinatedInstruction<TArgument, TResult> instruction) : this(cancellationToken, instruction, null) { }
 
-        protected internal Coordinator(CoordinatedInstruction<TArgument, TResult> instruction, Coordinator parent)
-            :base(parent)
+        protected internal Coordinator(CancellationToken cancellationToken, CoordinatedInstruction<TArgument, TResult> instruction, Coordinator parent)
+            :base(cancellationToken, parent)
         {
             _resultBlock = new ManualResetEvent(false);
             _instruction = instruction;
@@ -77,7 +93,9 @@ namespace Parallel.Coordinator.Interface
                 CoordinatedInstruction<TResult, TNextResult> instruction)
             where TNextResult : class
         {
-            var nextCoordinator = new Coordinator<TResult, TNextResult>(instruction, Parent);
+            CancellationTokenSource nextCts = new CancellationTokenSource();
+            CancellationToken.Register(nextCts.Cancel);
+            var nextCoordinator = new Coordinator<TResult, TNextResult>(nextCts.Token, instruction, Parent);
             nextCoordinator.Start(Result.Unwrap());
             return nextCoordinator;
         }
@@ -92,7 +110,7 @@ namespace Parallel.Coordinator.Interface
         {
             try
             {
-                _result = _instruction.InvokeAndWait(argument);
+                _result = _instruction.InvokeAndWait(CancellationToken, argument);
                 //tease out any exceptions
                 _result.Wait();
             }
