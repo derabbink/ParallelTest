@@ -62,5 +62,24 @@ namespace Parallel.Worker.Interface.Instruction
                 return null;
             };
         }
+
+        /// <summary>
+        /// wraps an operation that does not take a CancellationToken or progress reporting action
+        /// into one that does
+        /// </summary>
+        /// <typeparam name="TArgument"></typeparam>
+        /// <typeparam name="TResult"></typeparam>
+        /// <param name="function"></param>
+        /// <returns></returns>
+        public static Func<CancellationToken, Action, TArgument, TResult> Wrap<TArgument, TResult>(
+                Func<TArgument, TResult> function)
+        {
+            return (ct, p, a) => function(a);
+        }
+
+        public static Func<object, TResult> Wrap<TResult>(Func<TResult> function)
+        {
+            return _ => function();
+        }
     }
 }
