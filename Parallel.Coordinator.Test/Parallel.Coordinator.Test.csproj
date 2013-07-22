@@ -51,6 +51,56 @@
     </CodeAnalysisDependentAssemblyPaths>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Chaining\ChainingTest.cs" />
+    <Compile Include="Chaining\Instruction1\Chain1To1Test.cs" />
+    <Compile Include="Chaining\Instruction1\Chain1To2Test.cs" />
+    <Compile Include="Chaining\Instruction1\Chain1To3Test.cs" />
+    <Compile Include="Chaining\Instruction1\Chain1To4Test.cs" />
+    <Compile Include="Chaining\Instruction1\Chain1To5Test.cs" />
+    <Compile Include="Chaining\Instruction1\Chain1To6Test.cs" />
+    <Compile Include="Chaining\Instruction1\Chain1To7Test.cs" />
+    <Compile Include="Chaining\Instruction2\Chain2To1Test.cs" />
+    <Compile Include="Chaining\Instruction2\Chain2To2Test.cs" />
+    <Compile Include="Chaining\Instruction2\Chain2To3Test.cs" />
+    <Compile Include="Chaining\Instruction2\Chain2To4Test.cs" />
+    <Compile Include="Chaining\Instruction2\Chain2To5Test.cs" />
+    <Compile Include="Chaining\Instruction2\Chain2To6Test.cs" />
+    <Compile Include="Chaining\Instruction2\Chain2To7Test.cs" />
+    <Compile Include="Chaining\Instruction3\Chain3To1Test.cs" />
+    <Compile Include="Chaining\Instruction3\Chain3To2Test.cs" />
+    <Compile Include="Chaining\Instruction3\Chain3To3Test.cs" />
+    <Compile Include="Chaining\Instruction3\Chain3To4Test.cs" />
+    <Compile Include="Chaining\Instruction3\Chain3To5Test.cs" />
+    <Compile Include="Chaining\Instruction3\Chain3To6Test.cs" />
+    <Compile Include="Chaining\Instruction3\Chain3To7Test.cs" />
+    <Compile Include="Chaining\Instruction4\Chain4To1Test.cs" />
+    <Compile Include="Chaining\Instruction4\Chain4To2Test.cs" />
+    <Compile Include="Chaining\Instruction4\Chain4To3Test.cs" />
+    <Compile Include="Chaining\Instruction4\Chain4To4Test.cs" />
+    <Compile Include="Chaining\Instruction4\Chain4To5Test.cs" />
+    <Compile Include="Chaining\Instruction4\Chain4To6Test.cs" />
+    <Compile Include="Chaining\Instruction4\Chain4To7Test.cs" />
+    <Compile Include="Chaining\Instruction5\Chain5To1Test.cs" />
+    <Compile Include="Chaining\Instruction5\Chain5To2Test.cs" />
+    <Compile Include="Chaining\Instruction5\Chain5To3Test.cs" />
+    <Compile Include="Chaining\Instruction5\Chain5To4Test.cs" />
+    <Compile Include="Chaining\Instruction5\Chain5To5Test.cs" />
+    <Compile Include="Chaining\Instruction5\Chain5To6Test.cs" />
+    <Compile Include="Chaining\Instruction5\Chain5To7Test.cs" />
+    <Compile Include="Chaining\Instruction6\Chain6To1Test.cs" />
+    <Compile Include="Chaining\Instruction6\Chain6To2Test.cs" />
+    <Compile Include="Chaining\Instruction6\Chain6To3Test.cs" />
+    <Compile Include="Chaining\Instruction6\Chain6To4Test.cs" />
+    <Compile Include="Chaining\Instruction6\Chain6To5Test.cs" />
+    <Compile Include="Chaining\Instruction6\Chain6To6Test.cs" />
+    <Compile Include="Chaining\Instruction6\Chain6To7Test.cs" />
+    <Compile Include="Chaining\Instruction7\Chain7To1Test.cs" />
+    <Compile Include="Chaining\Instruction7\Chain7To2Test.cs" />
+    <Compile Include="Chaining\Instruction7\Chain7To3Test.cs" />
+    <Compile Include="Chaining\Instruction7\Chain7To4Test.cs" />
+    <Compile Include="Chaining\Instruction7\Chain7To5Test.cs" />
+    <Compile Include="Chaining\Instruction7\Chain7To6Test.cs" />
+    <Compile Include="Chaining\Instruction7\Chain7To7Test.cs" />
     <Compile Include="Coordinator2Test.cs" />
     <Compile Include="Coordinator3Test.cs" />
     <Compile Include="CoordinatorMultiTest.cs" />
@@ -81,6 +131,7 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
