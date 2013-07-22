@@ -1,5 +1,6 @@
 ﻿using System;
 using System.CodeDom.Compiler;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -16,30 +17,18 @@ using Parallel.Worker.Interface;
 namespace Parallel.Coordinator.Test
 {
     [TestFixture]
-    public class Coordinator2Test
+    public class Coordinator2Test : CoordinatorMultiTest
     {
-        private object _argument;
-        private Func<CancellationToken, Action, object, object> _identity;
-        private IExecutor _executor;
-        
-        #region setup
-        [SetUp]
-        public void Setup()
-        {
-            _executor = new TaskExecutor();
-            _argument = new object();
-            _identity = (ct, p, a) => a;
-        }
-        #endregion
+        private const int ParallelCount = 2;
 
         #region tests
         [Test]
         public void ParallelSuccessful()
         {
             var expected = _argument;
-            var instruction1 = new CoordinatedInstruction<object, object>(_executor, _identity);
-            var instruction2 = new CoordinatedInstruction<object, object>(_executor, _identity);
-            var coord = Coordinator2.Do(instruction1, instruction2, _argument);
+            int timeout = -1; //infinite timeout
+            var instructions = GenerateIdentityInstructions(ParallelCount, timeout);
+            var coord = Coordinator2.Do(instructions[0], instructions[1], _argument);
             var tuple = coord.Result.Result;
 
             Assert.That(tuple.Item1, Is.SameAs(expected));
@@ -47,32 +36,18 @@ namespace Parallel.Coordinator.Test
         }
 
         [Test]
-        public void ParallelFailOne1()
+        public void ParallelFailOne([Values(0, 1)] int failIndex)
         {
-            var expected = new Exception("Expected");
-            var notify1 = new ManualResetEventSlim(false);
-            var notify2 = new ManualResetEventSlim(false);
+            var notifyEvents = GenerateManualResetEvents(ParallelCount, false);
             var hold = new ManualResetEventSlim(false);
+            var holdEvents = Enumerable.Repeat(hold, ParallelCount).ToArray();
             int timeout = -1; //infinite timeout
-            var instruction1 = new CoordinatedInstruction<Exception, object>(_executor, CreateControllableThrow<object>(notify1, hold), timeout);
-            var instruction2 = new CoordinatedInstruction<Exception, Exception>(_executor, CreateControllableIdentity<Exception>(notify2, hold), timeout);
-
-            Task t = Task.Factory.StartNew(() =>
-                {
-                    try
-                    {
-                        //this should throw
-                        Coordinator2.Do(instruction1, instruction2, expected);
-                    }
-                    finally
-                    {
-                        //so the test thread won't block if cancellation happens too early
-                        notify1.Set();
-                        notify2.Set();
-                    }
-                });
-            notify1.Wait();
-            notify2.Wait();
+            var instructions = GenerateControllableIdentityInstructions(notifyEvents, holdEvents, timeout);
+            var throwingInstruction = GenerateControllableThrowingInstruction(notifyEvents[failIndex], hold, timeout);
+            instructions[failIndex] = throwingInstruction;
+            
+            Task t = RunParallelInstructions(instructions, notifyEvents, CancellationToken.None, _expectedException);
+            WaitAll(notifyEvents);
             hold.Set();
 
             try
@@ -82,37 +57,21 @@ namespace Parallel.Coordinator.Test
             catch (AggregateException e)
             {
                 //Task t adds one layer of AggregateException
-                Assert.That(e.InnerException.InnerException, Is.SameAs(expected));
+                Assert.That(e.InnerException.InnerException, Is.SameAs(_expectedException));
             }
         }
 
         [Test]
-        public void ParallelFailOne2()
+        public void ParallelFailAll()
         {
-            var expected = new Exception("Expected");
-            var notify1 = new ManualResetEventSlim(false);
-            var notify2 = new ManualResetEventSlim(false);
+            var notifyEvents = GenerateManualResetEvents(ParallelCount, false);
             var hold = new ManualResetEventSlim(false);
+            var holdEvents = Enumerable.Repeat(hold, ParallelCount).ToArray();
             int timeout = -1; //infinite timeout
-            var instruction1 = new CoordinatedInstruction<Exception, Exception>(_executor, CreateControllableIdentity<Exception>(notify2, hold), timeout);
-            var instruction2 = new CoordinatedInstruction<Exception, object>(_executor, CreateControllableThrow<object>(notify1, hold), timeout);
+            var instructions = GenerateControllableThrowingInstructions(notifyEvents, holdEvents, timeout);
 
-            Task t = Task.Factory.StartNew(() =>
-            {
-                try
-                {
-                    //this should throw
-                    Coordinator2.Do(instruction1, instruction2, expected);
-                }
-                finally
-                {
-                    //so the test thread won't block if cancellation happens too early
-                    notify1.Set();
-                    notify2.Set();
-                }
-            });
-            notify1.Wait();
-            notify2.Wait();
+            Task t = RunParallelInstructions(instructions, notifyEvents, CancellationToken.None, _expectedException);
+            WaitAll(notifyEvents);
             hold.Set();
 
             try
@@ -122,39 +81,24 @@ namespace Parallel.Coordinator.Test
             catch (AggregateException e)
             {
                 //Task t adds one layer of AggregateException
-                Assert.That(e.InnerException.InnerException, Is.SameAs(expected));
+                Assert.That(e.InnerException.InnerException, Is.SameAs(_expectedException));
             }
         }
 
         [Test]
-        public void ParallelFailTwo()
+        public void ParallelTimeoutOne([Values(0, 1)] int timeoutIndex)
         {
-            var expected = new Exception("Expected");
-            var notify1 = new ManualResetEventSlim(false);
-            var notify2 = new ManualResetEventSlim(false);
-            var hold = new ManualResetEventSlim(false);
+            var notifyEvents = GenerateManualResetEvents(ParallelCount, false);
+            var holdEvents = GenerateManualResetEvents(ParallelCount, false);
             int timeout = -1; //infinite timeout
-            var instruction1 = new CoordinatedInstruction<Exception, object>(_executor, CreateControllableThrow<object>(notify2, hold), timeout);
-            var instruction2 = new CoordinatedInstruction<Exception, object>(_executor, CreateControllableThrow<object>(notify1, hold), timeout);
+            var instructions = GenerateControllableIdentityInstructions(notifyEvents, holdEvents, timeout);
+            var timeoutInstruction = new CoordinatedInstruction<Exception, Exception>(_executor, CreateControllableIdentity<Exception>(notifyEvents[timeoutIndex], holdEvents[timeoutIndex]));
+            instructions[timeoutIndex] = timeoutInstruction;
 
-            Task t = Task.Factory.StartNew(() =>
-            {
-                try
-                {
-                    //this should throw
-                    Coordinator2.Do(instruction1, instruction2, expected);
-                }
-                finally
-                {
-                    //so the test thread won't block if cancellation happens too early
-                    notify1.Set();
-                    notify2.Set();
-                }
-            });
-            notify1.Wait();
-            notify2.Wait();
-            hold.Set();
-
+            Task t = RunParallelInstructions(instructions, notifyEvents, CancellationToken.None, _expectedException);
+            WaitAll(notifyEvents);
+            SetAllButOne(notifyEvents, timeoutIndex);
+            
             try
             {
                 t.Wait();
@@ -162,41 +106,21 @@ namespace Parallel.Coordinator.Test
             catch (AggregateException e)
             {
                 //Task t adds one layer of AggregateException
-                Assert.That(e.InnerException.InnerException, Is.SameAs(expected));
+                Assert.That(e.InnerException.InnerException, Is.TypeOf<TaskCanceledException>());
             }
         }
 
         [Test]
-        public void ParallelTimeoutOne1()
+        public void ParallelTimeoutAll()
         {
-            var notify1 = new ManualResetEventSlim(false);
-            var notify2 = new ManualResetEventSlim(false);
-            var hold1 = new ManualResetEventSlim(false);
-            var hold2 = new ManualResetEventSlim(false);
-            int timeout2 = -1; //infinite timeout
-            //this one will time out
-            var instruction1 = new CoordinatedInstruction<object, object>(_executor, CreateControllableIdentity<object>(notify1, hold1));
-            //this will complete
-            var instruction2 = new CoordinatedInstruction<object, object>(_executor, CreateControllableIdentity<object>(notify2, hold2), timeout2);
-
-            Task t = Task.Factory.StartNew(() =>
-            {
-                try
-                {
-                    //this should throw
-                    Coordinator2.Do(instruction1, instruction2, _argument);
-                }
-                finally
-                {
-                    //so the test thread won't block if cancellation happens too early
-                    notify1.Set();
-                    notify2.Set();
-                }
-            });
-            notify1.Wait();
-            notify2.Wait();
-            //hold1.Set();
-            hold2.Set();
+            var notifyEvents = GenerateManualResetEvents(ParallelCount, false);
+            var holdEvents = GenerateManualResetEvents(ParallelCount, false);
+            int timeout = 1000;
+            var instructions = GenerateControllableIdentityInstructions(notifyEvents, holdEvents, timeout);
+            
+            Task t = RunParallelInstructions(instructions, notifyEvents, CancellationToken.None, _expectedException);
+            WaitAll(notifyEvents);
+            //SetAll(notifyEvents);
 
             try
             {
@@ -210,125 +134,31 @@ namespace Parallel.Coordinator.Test
         }
 
         [Test]
-        public void ParallelTimeoutOne2()
+        public void ParallelCancelOne([Values(0, 1)] int cancelIndex)
         {
-            var notify1 = new ManualResetEventSlim(false);
-            var notify2 = new ManualResetEventSlim(false);
-            var hold1 = new ManualResetEventSlim(false);
-            var hold2 = new ManualResetEventSlim(false);
-            int timeout1 = -1; //infinite timeout
-            //this one will complete
-            var instruction1 = new CoordinatedInstruction<object, object>(_executor, CreateControllableIdentity<object>(notify1, hold1), timeout1);
-            //this will time out
-            var instruction2 = new CoordinatedInstruction<object, object>(_executor, CreateControllableIdentity<object>(notify2, hold2));
-
-            Task t = Task.Factory.StartNew(() =>
-            {
-                try
+            Exception[] targets = new Exception[ParallelCount];
+            Action[] sideEffects = new Action[]
                 {
-                    //this should throw
-                    Coordinator2.Do(instruction1, instruction2, _argument);
-                }
-                finally
-                {
-                    //so the test thread won't block if cancellation happens too early
-                    notify1.Set();
-                    notify2.Set();
-                }
-            });
-            notify1.Wait();
-            notify2.Wait();
-            hold1.Set();
-            //hold2.Set();
-
-            try
-            {
-                t.Wait();
-            }
-            catch (AggregateException e)
-            {
-                //Task t adds one layer of AggregateException
-                Assert.That(e.InnerException.InnerException, Is.TypeOf<TaskCanceledException>());
-            }
-        }
-
-        [Test]
-        public void ParallelTimeoutTwo()
-        {
-            var notify1 = new ManualResetEventSlim(false);
-            var notify2 = new ManualResetEventSlim(false);
-            var hold1 = new ManualResetEventSlim(false);
-            var hold2 = new ManualResetEventSlim(false);
-            var instruction1 = new CoordinatedInstruction<object, object>(_executor, CreateControllableIdentity<object>(notify1, hold1));
-            var instruction2 = new CoordinatedInstruction<object, object>(_executor, CreateControllableIdentity<object>(notify2, hold2));
-
-            Task t = Task.Factory.StartNew(() =>
-            {
-                try
-                {
-                    //this should throw
-                    Coordinator2.Do(instruction1, instruction2, _argument);
-                }
-                finally
-                {
-                    //so the test thread won't block if cancellation happens too early
-                    notify1.Set();
-                    notify2.Set();
-                }
-            });
-            notify1.Wait();
-            notify2.Wait();
-            //hold1.Set();
-            //hold2.Set();
-
-            try
-            {
-                t.Wait();
-            }
-            catch (AggregateException e)
-            {
-                //Task t adds one layer of AggregateException
-                Assert.That(e.InnerException.InnerException, Is.TypeOf<TaskCanceledException>());
-            }
-        }
-
-        [Test]
-        public void ParallelCancelOne1()
-        {
-            object target1 = null;
-            object target2 = null;
+                    () => { targets[0] = _argument; },
+                    () => { targets[1] = _argument; }
+                };
             CancellationTokenSource cts = new CancellationTokenSource();
-            Action sideEffect1 = () => { target1 = _argument; };
-            Action sideEffect2 = () => { target2 = _argument; };
-            var notify1 = new ManualResetEventSlim(false);
-            var notify2 = new ManualResetEventSlim(false);
-            var hold1 = new ManualResetEventSlim(false);
-            var hold2 = new ManualResetEventSlim(false);
+            var notifyEvents = GenerateManualResetEvents(ParallelCount, false);
+            var holdEvents = GenerateManualResetEvents(ParallelCount, false);
             int timeout = -1; //infinite timeout
-            var instruction1 = new CoordinatedInstruction<object, object>(_executor, CreateControllableIdentityWithSideEffect<object>(notify1, hold1, sideEffect1), timeout);
-            var instruction2 = new CoordinatedInstruction<object, object>(_executor, CreateControllableIdentityWithSideEffect<object>(notify2, hold2, sideEffect2), timeout);
+            var instructions = GenerateControllableIdentityInstructionsWithSideEffect(notifyEvents, holdEvents, sideEffects, timeout);
 
-            Task t = Task.Factory.StartNew(() =>
-            {
-                try
-                {
-                    //this should throw
-                    Coordinator2.Do(cts.Token, instruction1, instruction2, _argument);
-                }
-                finally
-                {
-                    //so the test thread won't block if cancellation happens too early
-                    notify1.Set();
-                    notify2.Set();
-                }
-            });
-            notify1.Wait();
-            notify1.Reset();
-            notify2.Wait();
-            hold1.Set();
-            notify1.Wait();
+            Task t = RunParallelInstructions(instructions, notifyEvents, cts.Token, _argument);
+            WaitAllButOne(notifyEvents, cancelIndex);
+            ResetAllButOne(notifyEvents, cancelIndex);
+
+            notifyEvents[cancelIndex].Wait();
+
+            SetAllButOne(holdEvents, cancelIndex);
+            WaitAllButOne(notifyEvents, cancelIndex);
+
             cts.Cancel();
-            //hold2.Set();
+            //holdEvents[cancelIndex].Set();
 
             try
             {
@@ -339,95 +169,34 @@ namespace Parallel.Coordinator.Test
                 //Task t adds one layer of AggregateException
                 Assert.That(e.InnerException.InnerException, Is.TypeOf<TaskCanceledException>());
             }
-            Assert.That(target1, Is.SameAs(_argument));
-            Assert.That(target2, Is.Null);
-        }
 
-        [Test]
-        public void ParallelCancelOne2()
-        {
-            object target1 = null;
-            object target2 = null;
-            CancellationTokenSource cts = new CancellationTokenSource();
-            Action sideEffect1 = () => { target1 = _argument; };
-            Action sideEffect2 = () => { target2 = _argument; };
-            var notify1 = new ManualResetEventSlim(false);
-            var notify2 = new ManualResetEventSlim(false);
-            var hold1 = new ManualResetEventSlim(false);
-            var hold2 = new ManualResetEventSlim(false);
-            int timeout = -1; //infinite timeout
-            var instruction1 = new CoordinatedInstruction<object, object>(_executor, CreateControllableIdentityWithSideEffect<object>(notify1, hold1, sideEffect1), timeout);
-            var instruction2 = new CoordinatedInstruction<object, object>(_executor, CreateControllableIdentityWithSideEffect<object>(notify2, hold2, sideEffect2), timeout);
-
-            Task t = Task.Factory.StartNew(() =>
-            {
-                try
-                {
-                    //this should throw
-                    Coordinator2.Do(cts.Token, instruction1, instruction2, _argument);
-                }
-                finally
-                {
-                    //so the test thread won't block if cancellation happens too early
-                    notify1.Set();
-                    notify2.Set();
-                }
-            });
-            notify1.Wait();
-            notify2.Wait();
-            notify2.Reset();
-            hold2.Set();
-            notify2.Wait();
-            cts.Cancel();
-            //hold1.Set();
-
-            try
-            {
-                t.Wait();
-            }
-            catch (AggregateException e)
-            {
-                //Task t adds one layer of AggregateException
-                Assert.That(e.InnerException.InnerException, Is.TypeOf<TaskCanceledException>());
-            }
-            Assert.That(target1, Is.Null);
-            Assert.That(target2, Is.SameAs(_argument));
+            for (int i = 0; i < ParallelCount; i++)
+                if (i == cancelIndex)
+                    Assert.That(targets[i], Is.Null);
+                else
+                    Assert.That(targets[i], Is.SameAs(_argument));
         }
 
         [Test]
         public void ParallelCancelTwo()
         {
-            object target = null;
+            Exception target = null;
+            Action[] sideEffects = new Action[]
+                {
+                    () => { target = _argument; },
+                    () => { target = _argument; }
+                };
             CancellationTokenSource cts = new CancellationTokenSource();
-            Action sideEffect = () => { target = _argument; };
-            var notify1 = new ManualResetEventSlim(false);
-            var notify2 = new ManualResetEventSlim(false);
-            var hold1 = new ManualResetEventSlim(false);
-            var hold2 = new ManualResetEventSlim(false);
+            var notifyEvents = GenerateManualResetEvents(ParallelCount, false);
+            var holdEvents = GenerateManualResetEvents(ParallelCount, false);
             int timeout = -1; //infinite timeout
-            var instruction1 = new CoordinatedInstruction<object, object>(_executor, CreateControllableIdentityWithSideEffect<object>(notify1, hold1, sideEffect), timeout);
-            var instruction2 = new CoordinatedInstruction<object, object>(_executor, CreateControllableIdentityWithSideEffect<object>(notify2, hold2, sideEffect), timeout);
+            var instructions = GenerateControllableIdentityInstructionsWithSideEffect(notifyEvents, holdEvents, sideEffects, timeout);
 
-            Task t = Task.Factory.StartNew(() =>
-            {
-                try
-                {
-                    //this should throw
-                    Coordinator2.Do(cts.Token, instruction1, instruction2, _argument);
-                }
-                finally
-                {
-                    //so the test thread won't block if cancellation happens too early
-                    notify1.Set();
-                    notify2.Set();
-                }
-            });
-            notify1.Wait();
-            notify2.Wait();
+            Task t = RunParallelInstructions(instructions, notifyEvents, cts.Token, _argument);
+            WaitAll(notifyEvents);
             cts.Cancel();
-            //hold1.Set();
-            //hold2.Set();
-
+            //SetAll(holdEvents);
+            
             try
             {
                 t.Wait();
@@ -441,91 +210,23 @@ namespace Parallel.Coordinator.Test
         }
         #endregion
 
-        #region helpers
-        public static Func<CancellationToken, Action, T, T> CreateControllableIdentity<T>
-            (ManualResetEventSlim notify, ManualResetEventSlim hold)
+        protected override Task RunParallelInstructions(CoordinatedInstruction<Exception, Exception>[] instructions,
+                                                        ManualResetEventSlim[] notifyEvents, CancellationToken cancellationToken, Exception argument)
         {
-            return (ct, p, a) =>
+            Task t = Task.Factory.StartNew(() =>
+            {
+                try
                 {
-                    notify.Set();
-                    p();
-                    hold.Wait(ct);
-                    return a;
-                };
+                    //this should throw
+                    Coordinator2.Do(cancellationToken, instructions[0], instructions[1], argument);
+                }
+                finally
+                {
+                    //so the test thread won't block if cancellation happens too early
+                    SetAll(notifyEvents);
+                }
+            });
+            return t;
         }
-
-        public static Func<CancellationToken, Action, T, T> CreateControllableIdentityWithSideEffect<T>
-            (ManualResetEventSlim notify, ManualResetEventSlim hold, Action sideEffect)
-        {
-            return (ct, p, a) =>
-            {
-                notify.Set();
-                p();
-                hold.Wait(ct);
-                notify.Set();
-                sideEffect();
-                return a;
-            };
-        }
-
-        public static Func<CancellationToken, Action, Exception, T> CreateControllableThrow<T>
-            (ManualResetEventSlim notify, ManualResetEventSlim hold)
-        {
-            return (ct, p, e) =>
-            {
-                notify.Set();
-                p();
-                hold.Wait(ct);
-                throw e;
-            };
-        }
-
-        #region testing helpers
-        [Test]
-        public void CreateControllableIdentityWorks()
-        {
-            var expected = _argument;
-            ManualResetEventSlim notify = new ManualResetEventSlim(false);
-            ManualResetEventSlim hold = new ManualResetEventSlim(true);
-            Func<CancellationToken, Action, object, object> funcUnderTest = CreateControllableIdentity<object>(notify, hold);
-            CancellationTokenSource cts = new CancellationTokenSource();
-            Action progress = () => { };
-
-            var actual = funcUnderTest(cts.Token, progress, _argument);
-            Assert.That(actual, Is.SameAs(expected));
-        }
-
-        [Test]
-        public void CreateControllableIdentityWithSideEffectWorks()
-        {
-            var expected = _argument;
-            object target = null;
-            Action sideEffect = () => { target = _argument; };
-            ManualResetEventSlim notify = new ManualResetEventSlim(false);
-            ManualResetEventSlim hold = new ManualResetEventSlim(true);
-            Func<CancellationToken, Action, object, object> funcUnderTest = CreateControllableIdentityWithSideEffect<object>(notify, hold, sideEffect);
-            CancellationTokenSource cts = new CancellationTokenSource();
-            Action progress = () => { };
-
-            var actual = funcUnderTest(cts.Token, progress, _argument);
-            Assert.That(target, Is.SameAs(expected));
-            Assert.That(actual, Is.SameAs(expected));
-        }
-
-        [Test]
-        [ExpectedException(typeof(Exception), ExpectedMessage = "Expected")]
-        public void CreateControllableThrowWorks()
-        {
-            var argument = new Exception("Expected");
-            ManualResetEventSlim notify = new ManualResetEventSlim(false);
-            ManualResetEventSlim hold = new ManualResetEventSlim(true);
-            Func<CancellationToken, Action, Exception, object> funcUnderTest = CreateControllableThrow<object>(notify, hold);
-            CancellationTokenSource cts = new CancellationTokenSource();
-            Action progress = () => { };
-
-            var actual = funcUnderTest(cts.Token, progress, argument);
-        }
-        #endregion
-        #endregion
     }
 }

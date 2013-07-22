@@ -45,6 +45,8 @@
     <Compile Include="Coordinator4.cs" />
     <Compile Include="Coordinator5.cs" />
     <Compile Include="Coordinator6.cs" />
+    <Compile Include="Coordinator7.cs" />
+    <Compile Include="Coordinator8.cs" />
     <Compile Include="Instruction\ParallelInstruction8.cs" />
     <Compile Include="Instruction\ParallelInstruction7.cs" />
     <Compile Include="Instruction\ParallelInstruction6.cs" />
