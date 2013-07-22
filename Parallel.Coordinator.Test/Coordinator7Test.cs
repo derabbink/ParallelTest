@@ -128,11 +128,7 @@ namespace Parallel.Coordinator.Test
             catch (AggregateException e)
             {
                 //Task t adds one layer of AggregateException
-                Debug.WriteLine(e.InnerException.InnerException);
                 Assert.That(e.InnerException.InnerException, Is.TypeOf<TaskCanceledException>());
-                //This test can fail with an AggregateException(OperationCanceledException) due to a race condition:
-                // the first timed-out subtask cancels all other subtasks, on of which had not yet been started
-                // Solution: increase timeout
             }
         }
 

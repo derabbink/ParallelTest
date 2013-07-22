@@ -45,11 +45,10 @@ namespace Parallel.Coordinator.Instruction
         }
 
         internal static void ProcessParallelExecutionErrors(ConcurrentQueue<Exception> operationalExceptions,
-                                                            ConcurrentQueue<TaskCanceledException>
+                                                            ConcurrentQueue<OperationCanceledException>
                                                                 cancellationExceptions,
                                                             CancellationToken cancellationToken)
         {
-            Debug.WriteLine("processing exceptions");
             if (operationalExceptions.Any())
                 throw operationalExceptions.First();
             if (cancellationExceptions.Any())

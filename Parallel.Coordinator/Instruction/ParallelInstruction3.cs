@@ -49,7 +49,7 @@ namespace Parallel.Coordinator.Instruction
             Func<CancellationToken, Action, TArgument, Tuple<TResult1, TResult2, TResult3>> result = (ct, progress, arg) =>
                 {
                     ConcurrentQueue<Exception> operationalExceptions = new ConcurrentQueue<Exception>();
-                    ConcurrentQueue<TaskCanceledException> cancellationExceptions = new ConcurrentQueue<TaskCanceledException>();
+                    ConcurrentQueue<OperationCanceledException> cancellationExceptions = new ConcurrentQueue<OperationCanceledException>();
 
                     CancellationTokenSource[] ctss = ParallelInstruction.GenerateCancellationTokenSources(3);
                     ct.Register(() => ParallelInstruction.CancelAll(ctss));
@@ -71,9 +71,17 @@ namespace Parallel.Coordinator.Instruction
                                                                 operationalExceptions.Enqueue, f => future3 = f)
                         };
                     progress();
-                    
-                    //should not throw
-                    Task.WaitAll(tasks);
+
+                    try
+                    {
+                        Task.WaitAll(tasks);
+                    }
+                    catch (AggregateException e)
+                    {
+                        //might throw if not all tasks have started execution before their cancellation has been requested
+                        if (e.InnerException is OperationCanceledException)
+                            cancellationExceptions.Enqueue(e.InnerException as OperationCanceledException);
+                    }
                     progress();
 
                     ParallelInstruction.ProcessParallelExecutionErrors(operationalExceptions, cancellationExceptions, ct);
