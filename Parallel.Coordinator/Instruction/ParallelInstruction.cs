@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -48,6 +49,7 @@ namespace Parallel.Coordinator.Instruction
                                                                 cancellationExceptions,
                                                             CancellationToken cancellationToken)
         {
+            Debug.WriteLine("processing exceptions");
             if (operationalExceptions.Any())
                 throw operationalExceptions.First();
             if (cancellationExceptions.Any())

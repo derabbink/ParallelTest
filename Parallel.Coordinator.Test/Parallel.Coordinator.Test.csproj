@@ -54,6 +54,10 @@
     <Compile Include="Coordinator2Test.cs" />
     <Compile Include="Coordinator3Test.cs" />
     <Compile Include="CoordinatorMultiTest.cs" />
+    <Compile Include="Coordinator4Test.cs" />
+    <Compile Include="Coordinator5Test.cs" />
+    <Compile Include="Coordinator6Test.cs" />
+    <Compile Include="Coordinator7Test.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
